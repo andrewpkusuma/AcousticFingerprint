@@ -8,23 +8,16 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
@@ -43,7 +36,7 @@ public class ListenFragment extends Fragment {
     private static int BUFFER_SIZE = AudioRecord.getMinBufferSize(
             RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
     SharedPreferences sharedpreferences;
-    private short[] audio, audioData[];
+    private short[] audio;
     private TextView text;
     //private String randomName = UUID.randomUUID().toString().substring(0, 7);
     //private String filePath = null;
@@ -53,16 +46,13 @@ public class ListenFragment extends Fragment {
     private Thread recordingThread = null;
     private boolean isRecording = false;
     private int recordInterval;
-    private DBHelper dbHelper;
     private String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav"};
     private int[] match;
-    private ArrayList<HashMap<Integer, Integer>> map;
     private TimerTask recordTask;
     private RecordRunnable runnable;
 
     public static ListenFragment newInstance() {
-        ListenFragment fragment = new ListenFragment();
-        return fragment;
+        return new ListenFragment();
     }
 
     private void onRecord(boolean isRecording) {
@@ -81,9 +71,6 @@ public class ListenFragment extends Fragment {
     }
 
     private void startRecording() {
-        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
-                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
-                RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
         recorder.startRecording();
         isRecording = true;
         runnable = new RecordRunnable();
@@ -104,8 +91,8 @@ public class ListenFragment extends Fragment {
             recordingThread = null;
             recorder.stop();
             isRecording = false;
-            recorder.release();
-            recorder = null;
+            //recorder.release();
+            //recorder = null;
         }
     }
 
@@ -158,7 +145,9 @@ public class ListenFragment extends Fragment {
         sharedpreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         recordInterval = Integer.parseInt(sharedpreferences.getString("recInterval", "5"));
         audio = new short[RECORDER_SAMPLERATE * recordInterval];
-        dbHelper = new DBHelper(getContext());
+        recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
+                RECORDER_SAMPLERATE, RECORDER_CHANNELS,
+                RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
         /*
         dbHelper.refreshDatabase();
         for (int i = 0; i < files.length; i++) {
@@ -176,7 +165,7 @@ public class ListenFragment extends Fragment {
                 e.printStackTrace();
             }
 
-            short[] shorts = new short[imgDataBa.length/2];
+            short[] shorts = new short[imgDataBa.length / 2];
             // to turn bytes to shorts as either big endian or little endian.
             ByteBuffer.wrap(imgDataBa).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
 
@@ -192,7 +181,7 @@ public class ListenFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        if (recorder != null) {
+        if (isRecording) {
             onRecord(true);
         }
     }
@@ -216,29 +205,52 @@ public class ListenFragment extends Fragment {
                         mRecordButton.setVisibility(View.VISIBLE);
                     }
                 });
-                map = new ArrayList<>();
+                DBHelper dbHelper = new DBHelper(getContext());
+                HashMap<ArrayList<Integer>, ArrayList<Integer>> targetZoneMap = new HashMap<>();
+                SparseIntArray[] timeCoherencyMap = new SparseIntArray[files.length];
                 for (int i = 0; i < files.length; i++)
-                    map.add(new HashMap<Integer, Integer>());
+                    timeCoherencyMap[i] = new SparseIntArray();
                 for (Fingerprint f : fingerprints) {
                     Cursor couples = dbHelper.getData(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta());
                     if (couples.moveToFirst()) {
                         do {
-                            Short id = couples.getShort(couples.getColumnIndex("song_id"));
-                            Integer delta = f.getAbsoluteTime() - couples.getShort(couples.getColumnIndex("absolute_time"));
-                            Integer count = map.get(id).get(delta);
-                            map.get(id).put(delta, count == null ? 1 : count + 1);
+                            Integer id = couples.getInt(couples.getColumnIndex("song_id"));
+                            Integer absoluteTime = couples.getInt(couples.getColumnIndex("absolute_time"));
+                            Integer delta = f.getAbsoluteTime() - absoluteTime;
+                            ArrayList<Integer> couple = new ArrayList<>();
+                            couple.add(id);
+                            couple.add(absoluteTime);
+                            ArrayList<Integer> a;
+                            if ((a = targetZoneMap.get(couple)) != null) {
+                                a.add(delta);
+                                targetZoneMap.put(couple, a);
+                            } else {
+                                a = new ArrayList<>();
+                                a.add(delta);
+                                targetZoneMap.put(couple, a);
+                            }
                         } while (couples.moveToNext());
                     }
                     couples.close();
+                    dbHelper.close();
                 }
+                for (ArrayList<Integer> i : targetZoneMap.keySet()) {
+                    ArrayList<Integer> a = targetZoneMap.get(i);
+                    if (a.size() >= 4)
+                        for (Integer delta : a) {
+                            Integer count = timeCoherencyMap[i.get(0)].get(delta);
+                            timeCoherencyMap[i.get(0)].put(delta, count == 0 ? 1 : count + 1);
+                        }
+                }
+                    /*Integer count = map[id].get(delta);
+                            map[id].put(delta, count == 0 ? 1 : count + 1);*/
                 for (int i = 0; i < match.length; i++) {
-                    HashMap<Integer, Integer> h = map.get(i);
-                    int currentMaxDelta = 0;
+                    SparseIntArray s = timeCoherencyMap[i];
                     int currentMaxDeltaCount = 0;
-                    for (Integer delta : h.keySet()) {
-                        if (h.get(delta) >= currentMaxDeltaCount) {
-                            currentMaxDelta = delta;
-                            currentMaxDeltaCount = h.get(delta);
+                    for (int j = 0; j < s.size(); j++) {
+                        Integer delta = s.keyAt(j);
+                        if (s.get(delta) >= currentMaxDeltaCount) {
+                            currentMaxDeltaCount = s.get(delta);
                         }
                     }
                     match[i] += currentMaxDeltaCount;
@@ -298,7 +310,7 @@ public class ListenFragment extends Fragment {
                 writeAudioDataToArray();
         }
 
-        public void stop() {
+        void stop() {
             exit = true;
         }
     }

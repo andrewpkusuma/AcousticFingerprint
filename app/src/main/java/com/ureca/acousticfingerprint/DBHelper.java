@@ -4,18 +4,19 @@ package com.ureca.acousticfingerprint;
  * Created by Andrew on 1/21/17.
  */
 
-import java.util.HashMap;
 import android.content.ContentValues;
 import android.content.Context;
 import android.database.Cursor;
 import android.database.DatabaseUtils;
-import android.database.sqlite.SQLiteOpenHelper;
 import android.database.sqlite.SQLiteDatabase;
+import android.database.sqlite.SQLiteOpenHelper;
+
+import java.util.HashMap;
 
 public class DBHelper extends SQLiteOpenHelper {
 
-    public static final String DATABASE_NAME = "MyDBName.db";
-    public static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
+    private static final String DATABASE_NAME = "MyDBName.db";
+    private static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
     public static final String FINGERPRINTS_COLUMN_ANCHOR_FREQUENCY = "anchor_frequency";
     public static final String FINGERPRINTS_COLUMN_POINT_FREQUENCY = "point_frequency";
     public static final String FINGERPRINTS_DELTA = "delta";
@@ -24,7 +25,7 @@ public class DBHelper extends SQLiteOpenHelper {
     private HashMap hp;
 
     public DBHelper(Context context) {
-        super(context, DATABASE_NAME , null, 1);
+        super(context, DATABASE_NAME, null, 1);
     }
 
     @Override
@@ -63,21 +64,22 @@ public class DBHelper extends SQLiteOpenHelper {
 
     public Cursor getData(short anchorFrequency, short pointFrequency, byte delta) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res =  db.rawQuery( "select absolute_time, song_id from fingerprints where anchor_frequency="+anchorFrequency+" and point_frequency="+pointFrequency+" and delta="+delta+"", null );
+        Cursor res = db.rawQuery("select absolute_time, song_id from fingerprints " +
+                "where anchor_frequency=" + anchorFrequency + " and point_frequency=" + pointFrequency + " and delta=" + delta, null);
         return res;
     }
 
-    public long numberOfRows(){
+    public long numberOfRows() {
         SQLiteDatabase db = this.getReadableDatabase();
         long numRows = DatabaseUtils.queryNumEntries(db, FINGERPRINTS_TABLE_NAME);
         return numRows;
     }
 
-    public Integer deleteFingerprint (short anchorFrequency, short pointFrequency, byte delta) {
+    public Integer deleteFingerprint(short anchorFrequency, short pointFrequency, byte delta) {
         SQLiteDatabase db = this.getWritableDatabase();
         return db.delete("fingerprints",
                 "anchor_frequency = ? and point_frequency = ? and delta = ? ",
-                new String[] {Short.toString(anchorFrequency), Short.toString(pointFrequency), Byte.toString(delta)});
+                new String[]{Short.toString(anchorFrequency), Short.toString(pointFrequency), Byte.toString(delta)});
     }
 
     /*
