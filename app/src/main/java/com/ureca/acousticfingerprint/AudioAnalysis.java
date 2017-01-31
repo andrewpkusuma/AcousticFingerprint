@@ -50,7 +50,7 @@ public class AudioAnalysis {
     public static ArrayList<int[]> findPeak(Complex[][] spectrum) {
         double[][] peak = new double[spectrum.length][RANGE.length];
         double[][] highscores = new double[spectrum.length][RANGE.length];
-        //double maxMag = 0, totalMag[] = new double[peak.length / FILTER_WINDOW_SIZE + 1], meanMag[] = new double[peak.length / FILTER_WINDOW_SIZE + 1];
+        double totalMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1], meanMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1];
         ArrayList<int[]> peakFiltered = new ArrayList<>();
         //For every line of data:
         for (int i = 0; i < spectrum.length; i++) {
@@ -68,8 +68,7 @@ public class AudioAnalysis {
                 }
             }
         }
-        //Filtering using sliding windows, still doesn't work
-        /*
+        //Filtering using sliding windows, somewhat works for now
         int index = 0, restCount = 0;
         while ((index + 1) * FILTER_WINDOW_SIZE <= peak.length) {
             for (int j = index * FILTER_WINDOW_SIZE; j < index * FILTER_WINDOW_SIZE + FILTER_WINDOW_SIZE; j++)
@@ -82,21 +81,19 @@ public class AudioAnalysis {
                 totalMag[index] += spectrum[i][(int) peak[i][j]].abs();
                 restCount++;
             }
-
         for (int i = 0; i < meanMag.length - 1; i++)
             meanMag[i] = totalMag[i] / (FILTER_WINDOW_SIZE * peak[0].length);
-
-        meanMag[meanMag.length - 1] = totalMag[meanMag.length - 1] / restCount;
-
+        meanMag[meanMag.length - 1] = totalMag[totalMag.length - 1] / restCount;
         for (int i = 0; i < peak.length; i++) {
             for (int j = 0; j < peak[i].length; j++) {
-                if (spectrum[i][(int) peak[i][j]].abs() >= meanMag[i / FILTER_WINDOW_SIZE]) {
+                if (spectrum[i][(int) peak[i][j]].abs() >= meanMag[(i - 1) / FILTER_WINDOW_SIZE] && peak[i][j] != 0) {
                     int[] temp = {i, (int) peak[i][j]};
                     peakFiltered.add(temp);
                 }
             }
         }
-        */
+        //Filtering using mean of whole record
+        /*
         double totalMag = 0, meanMag = 0;
         for (int i = 0; i < peak.length; i++)
             for (int j = 0; j < peak[i].length; j++)
@@ -108,6 +105,7 @@ public class AudioAnalysis {
                     int[] temp = {i, (int) peak[i][j]};
                     peakFiltered.add(temp);
                 }
+                */
         /*
         //Write the points to a file:
         for (int i = 0; i < AMOUNT_OF_POINTS; i++) {

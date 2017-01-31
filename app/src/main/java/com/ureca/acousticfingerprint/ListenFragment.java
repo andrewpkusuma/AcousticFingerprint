@@ -8,6 +8,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -18,6 +19,13 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
@@ -148,6 +156,7 @@ public class ListenFragment extends Fragment {
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 RECORDER_SAMPLERATE, RECORDER_CHANNELS,
                 RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
+        // Renew database upon AudioAnalysis parameters change
         /*
         dbHelper.refreshDatabase();
         for (int i = 0; i < files.length; i++) {
@@ -242,8 +251,7 @@ public class ListenFragment extends Fragment {
                             timeCoherencyMap[i.get(0)].put(delta, count == 0 ? 1 : count + 1);
                         }
                 }
-                    /*Integer count = map[id].get(delta);
-                            map[id].put(delta, count == 0 ? 1 : count + 1);*/
+                // Currently assume most common delta is the correct delta
                 for (int i = 0; i < match.length; i++) {
                     SparseIntArray s = timeCoherencyMap[i];
                     int currentMaxDeltaCount = 0;
