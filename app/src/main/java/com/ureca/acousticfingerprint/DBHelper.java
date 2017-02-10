@@ -11,18 +11,15 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import java.util.HashMap;
-
 public class DBHelper extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "MyDBName.db";
-    private static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
     public static final String FINGERPRINTS_COLUMN_ANCHOR_FREQUENCY = "anchor_frequency";
     public static final String FINGERPRINTS_COLUMN_POINT_FREQUENCY = "point_frequency";
     public static final String FINGERPRINTS_DELTA = "delta";
     public static final String FINGERPRINTS_ABSOLUTE_TIME = "absolute_time";
     public static final String FINGERPRINTS_SONG_ID = "song_id";
-    private HashMap hp;
+    private static final String DATABASE_NAME = "MyDBName.db";
+    private static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
