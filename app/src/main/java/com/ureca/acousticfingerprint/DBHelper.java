@@ -11,18 +11,15 @@ import android.database.DatabaseUtils;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 
-import java.util.HashMap;
-
 public class DBHelper extends SQLiteOpenHelper {
 
-    private static final String DATABASE_NAME = "MyDBName.db";
-    private static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
     public static final String FINGERPRINTS_COLUMN_ANCHOR_FREQUENCY = "anchor_frequency";
     public static final String FINGERPRINTS_COLUMN_POINT_FREQUENCY = "point_frequency";
     public static final String FINGERPRINTS_DELTA = "delta";
     public static final String FINGERPRINTS_ABSOLUTE_TIME = "absolute_time";
     public static final String FINGERPRINTS_SONG_ID = "song_id";
-    private HashMap hp;
+    private static final String DATABASE_NAME = "MyDBName.db";
+    private static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
 
     public DBHelper(Context context) {
         super(context, DATABASE_NAME, null, 1);
@@ -73,6 +70,15 @@ public class DBHelper extends SQLiteOpenHelper {
         SQLiteDatabase db = this.getReadableDatabase();
         long numRows = DatabaseUtils.queryNumEntries(db, FINGERPRINTS_TABLE_NAME);
         return numRows;
+    }
+
+    public int getNumOfSongs() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        Cursor res = db.rawQuery("select count(distinct song_id) from fingerprints", null);
+        res.moveToFirst();
+        int numOfSongs = res.getInt(0);
+        res.close();
+        return numOfSongs;
     }
 
     public Integer deleteFingerprint(short anchorFrequency, short pointFrequency, byte delta) {
