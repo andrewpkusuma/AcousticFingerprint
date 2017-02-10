@@ -10,7 +10,8 @@ import java.util.ArrayList;
 public class AudioAnalysis {
 
     private static final int CHUNK_SIZE = 4096;
-    private static final int[] RANGE = new int[]{6, 24, 186, 372, 558, 2048};
+    //Range : {80, 320, 2560, 5120, 20000, 44100}
+    private static final int[] RANGE = new int[]{8, 30, 238, 376, 1858, 4096};
     private static final int ANCHOR_DISTANCE = 3;
     private static final int TARGET_ZONE_SIZE = 5;
     private static final int FILTER_WINDOW_SIZE = 10;
