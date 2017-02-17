@@ -54,7 +54,7 @@ public class ListenFragment extends Fragment {
     private Thread recordingThread = null;
     private boolean isRecording = false;
     private int recordInterval;
-    private String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav"};
+    private String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
     private int[] match;
     private TimerTask recordTask;
     private RecordRunnable runnable;
@@ -158,6 +158,7 @@ public class ListenFragment extends Fragment {
                 RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
         // Renew database upon AudioAnalysis parameters change
         /*
+        DBHelper dbHelper = new DBHelper(getContext());
         dbHelper.refreshDatabase();
         for (int i = 0; i < files.length; i++) {
             String fileNames = files[i];
