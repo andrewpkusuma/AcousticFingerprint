@@ -58,6 +58,7 @@ public class ListenFragment extends Fragment {
     private int[] match;
     private TimerTask recordTask;
     private RecordRunnable runnable;
+    private DBHelper dbHelper;
 
     public static ListenFragment newInstance() {
         return new ListenFragment();
@@ -151,14 +152,14 @@ public class ListenFragment extends Fragment {
     public void onStart() {
         super.onStart();
         sharedpreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        recordInterval = Integer.parseInt(sharedpreferences.getString("recInterval", "5"));
+        recordInterval = Integer.parseInt(sharedpreferences.getString("recInterval", "2"));
         audio = new short[RECORDER_SAMPLERATE * recordInterval];
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 RECORDER_SAMPLERATE, RECORDER_CHANNELS,
                 RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
         // Renew database upon AudioAnalysis parameters change
         /*
-        DBHelper dbHelper = new DBHelper(getContext());
+        dbHelper = new DBHelper(getContext());
         dbHelper.refreshDatabase();
         for (int i = 0; i < files.length; i++) {
             String fileNames = files[i];
@@ -169,8 +170,6 @@ public class ListenFragment extends Fragment {
             try {
                 dataIs = new DataInputStream(new FileInputStream(file));
                 dataIs.readFully(imgDataBa);
-            } catch (FileNotFoundException e) {
-                e.printStackTrace();
             } catch (IOException e) {
                 e.printStackTrace();
             }
@@ -196,7 +195,7 @@ public class ListenFragment extends Fragment {
         }
     }
 
-    class RecordTask extends TimerTask {
+    private class RecordTask extends TimerTask {
         public void run() {
             if (recorder != null) {
                 stopRecording();
@@ -215,7 +214,7 @@ public class ListenFragment extends Fragment {
                         mRecordButton.setVisibility(View.VISIBLE);
                     }
                 });
-                DBHelper dbHelper = new DBHelper(getContext());
+                dbHelper = new DBHelper(getContext());
                 HashMap<ArrayList<Integer>, ArrayList<Integer>> targetZoneMap = new HashMap<>();
                 SparseIntArray[] timeCoherencyMap = new SparseIntArray[files.length];
                 for (int i = 0; i < files.length; i++)
@@ -246,7 +245,7 @@ public class ListenFragment extends Fragment {
                 }
                 for (ArrayList<Integer> i : targetZoneMap.keySet()) {
                     ArrayList<Integer> a = targetZoneMap.get(i);
-                    if (a.size() >= 4)
+                    if (a.size() >= 3)
                         for (Integer delta : a) {
                             Integer count = timeCoherencyMap[i.get(0)].get(delta);
                             timeCoherencyMap[i.get(0)].put(delta, count == 0 ? 1 : count + 1);
@@ -264,6 +263,7 @@ public class ListenFragment extends Fragment {
                     }
                     match[i] += currentMaxDeltaCount;
                 }
+
                 int maxTemp = 0, maximum = -1;
                 for (int i = 0; i < match.length; i++) {
                     if (match[i] > maxTemp) {
@@ -271,7 +271,8 @@ public class ListenFragment extends Fragment {
                         maxTemp = match[i];
                     }
                 }
-                if (maximum >= 0) {
+
+                if (maximum > 0 && isRecording) {
                     final String MATCHING_AD = files[maximum];
                     final int COUNT = match[maximum];
                     text.post(new Runnable() {
@@ -311,7 +312,7 @@ public class ListenFragment extends Fragment {
         }
     }
 
-    class RecordRunnable implements Runnable {
+    private class RecordRunnable implements Runnable {
         private volatile boolean exit = false;
 
         public void run() {

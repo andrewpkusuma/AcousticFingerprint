@@ -10,11 +10,11 @@ import java.util.ArrayList;
 public class AudioAnalysis {
 
     private static final int CHUNK_SIZE = 4096;
-    //Range : {80, 320, 2560, 5120, 20000, 44100}
-    private static final int[] RANGE = new int[]{8, 30, 238, 376, 1858, 4096};
+    //Range : {80, 320, 2560, 5120, 20000, 22050}
+    private static final int[] RANGE = new int[]{30, 238, 476, 1858, 2048};
     private static final int ANCHOR_DISTANCE = 3;
     private static final int TARGET_ZONE_SIZE = 5;
-    private static final int FILTER_WINDOW_SIZE = 10;
+    //private static final int FILTER_WINDOW_SIZE = 20;
 
     public static ArrayList<Fingerprint> fingerprint(short[] audio) {
         Complex[][] spectrum = fft(audio);
@@ -51,7 +51,7 @@ public class AudioAnalysis {
     public static ArrayList<int[]> findPeak(Complex[][] spectrum) {
         double[][] peak = new double[spectrum.length][RANGE.length];
         double[][] highscores = new double[spectrum.length][RANGE.length];
-        double totalMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1], meanMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1];
+        //double totalMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1], meanMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1];
         ArrayList<int[]> peakFiltered = new ArrayList<>();
         //For every line of data:
         for (int i = 0; i < spectrum.length; i++) {
@@ -70,6 +70,7 @@ public class AudioAnalysis {
             }
         }
         //Filtering using sliding windows, somewhat works for now
+        /*
         int index = 0, restCount = 0;
         while ((index + 1) * FILTER_WINDOW_SIZE <= peak.length) {
             for (int j = index * FILTER_WINDOW_SIZE; j < index * FILTER_WINDOW_SIZE + FILTER_WINDOW_SIZE; j++)
@@ -93,8 +94,10 @@ public class AudioAnalysis {
                 }
             }
         }
+        */
+
         //Filtering using mean of whole record
-        /*
+
         double totalMag = 0, meanMag = 0;
         for (int i = 0; i < peak.length; i++)
             for (int j = 0; j < peak[i].length; j++)
@@ -106,7 +109,6 @@ public class AudioAnalysis {
                     int[] temp = {i, (int) peak[i][j]};
                     peakFiltered.add(temp);
                 }
-                */
         /*
         //Write the points to a file:
         for (int i = 0; i < AMOUNT_OF_POINTS; i++) {

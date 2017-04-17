@@ -33,16 +33,16 @@ import static android.content.ContentValues.TAG;
 public class HistoryFragment extends Fragment {
 
     SharedPreferences sharedpreferences;
-    private Boolean isStarted = false;
-    private Boolean isVisible = false;
-    private List<Advertisement> ads = new ArrayList<>();
-    private String jsonAds;
-    private RecyclerView rv;
     FloatingActionButton addAd;
     FloatingActionButton removeAd;
     Editor prefsEditor;
     Gson gson = new Gson();
     AdvertisementRecycleViewAdapter adapter;
+    private Boolean isStarted = false;
+    private Boolean isVisible = false;
+    private List<Advertisement> ads = new ArrayList<>();
+    private String jsonAds;
+    private RecyclerView rv;
 
     public static HistoryFragment newInstance() {
         HistoryFragment fragment = new HistoryFragment();
@@ -169,7 +169,7 @@ public class HistoryFragment extends Fragment {
         prefsEditor = sharedpreferences.edit();
         jsonAds = gson.toJson(adapter.getAds());
         prefsEditor.putString("adList", jsonAds);
-        prefsEditor.commit();
+        prefsEditor.apply();
         //Log.d("TAG","jsonCars = " + jsonAds);
     }
 
