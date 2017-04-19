@@ -8,7 +8,6 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -19,13 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Timer;
@@ -46,8 +38,6 @@ public class ListenFragment extends Fragment {
     SharedPreferences sharedpreferences;
     private short[] audio;
     private TextView text;
-    //private String randomName = UUID.randomUUID().toString().substring(0, 7);
-    //private String filePath = null;
     private Timer timer = null;
     private FloatingActionButton mRecordButton = null;
     private AudioRecord recorder = null;
@@ -87,34 +77,17 @@ public class ListenFragment extends Fragment {
         recordingThread.start();
         recordTask = new RecordTask();
         timer = new Timer();
-        timer.scheduleAtFixedRate(recordTask, recordInterval * 1000, recordInterval * 1000);
+        timer.schedule(recordTask, recordInterval * 1000);
     }
 
     private void stopRecording() {
         if (recorder != null) {
-            timer.cancel();
-            timer.purge();
             recordTask.cancel();
             runnable.stop();
             runnable = null;
             recordingThread = null;
             recorder.stop();
             isRecording = false;
-            //recorder.release();
-            //recorder = null;
-        }
-    }
-
-    private void writeAudioDataToArray() {
-        short sData[] = new short[BUFFER_SIZE / 2];
-        int index = 0;
-
-        while (isRecording) {
-            recorder.read(sData, 0, BUFFER_SIZE / 2);
-            if (index + sData.length <= audio.length) {
-                System.arraycopy(sData, 0, audio, index, sData.length);
-                index += sData.length;
-            }
         }
     }
 
@@ -134,14 +107,12 @@ public class ListenFragment extends Fragment {
 
         mRecordButton.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED || ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-
+                if (ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED
+                        || ActivityCompat.checkSelfPermission(getActivity(), Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED)
                     ActivityCompat.requestPermissions(getActivity(), new String[]{Manifest.permission.RECORD_AUDIO, Manifest.permission.WRITE_EXTERNAL_STORAGE},
                             0);
-
-                } else {
+                else
                     onRecord(isRecording);
-                }
             }
         });
 
@@ -199,21 +170,9 @@ public class ListenFragment extends Fragment {
         public void run() {
             if (recorder != null) {
                 stopRecording();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mRecordButton.setVisibility(View.INVISIBLE);
-                    }
-                });
                 ArrayList<Fingerprint> fingerprints = AudioAnalysis.fingerprint(audio);
                 audio = new short[RECORDER_SAMPLERATE * recordInterval];
                 startRecording();
-                getActivity().runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        mRecordButton.setVisibility(View.VISIBLE);
-                    }
-                });
                 dbHelper = new DBHelper(getContext());
                 HashMap<ArrayList<Integer>, ArrayList<Integer>> targetZoneMap = new HashMap<>();
                 SparseIntArray[] timeCoherencyMap = new SparseIntArray[files.length];
@@ -281,47 +240,29 @@ public class ListenFragment extends Fragment {
                         }
                     });
                 }
-                /*
-                Writer fileWriter;
-                try {
-                    fileWriter = new FileWriter(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + randomName + ".txt");
-                    for (int i : match) {
-                        fileWriter.write(i+"");
-                        fileWriter.write(System.lineSeparator());
-                    }
-                    fileWriter.close();
-                    /*
-                    for (Fingerprint f : fingerprints) {
-                        //dbHelper.insertFingerprint(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta(), f.getAbsoluteTime(), 0);
-                        fileWriter.write(f.getAnchorFrequency() + " " + f.getPointFrequency() + " " + f.getDelta() + " " + f.getAbsoluteTime());
-                        fileWriter.write(System.lineSeparator());
-                    }
-                    //fileWriter.write(String.valueOf(dbHelper.numberOfRows()));
-                    fileWriter.close();
-
-                } catch (IOException e) {
-                    e.printStackTrace();
-                }
-            */
             }
-            //randomName = UUID.randomUUID().toString().substring(0, 7);
-            //filePath = Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + randomName + ".pcm";
-            /*
-
-            */
         }
     }
 
     private class RecordRunnable implements Runnable {
-        private volatile boolean exit = false;
+        private volatile boolean isStopped = false;
 
         public void run() {
-            if (!exit)
-                writeAudioDataToArray();
+            if (!isStopped) {
+                short sData[] = new short[BUFFER_SIZE / 2];
+                int index = 0;
+                while (isRecording) {
+                    recorder.read(sData, 0, BUFFER_SIZE / 2);
+                    if (index + sData.length <= audio.length) {
+                        System.arraycopy(sData, 0, audio, index, sData.length);
+                        index += sData.length;
+                    }
+                }
+            }
         }
 
         void stop() {
-            exit = true;
+            isStopped = true;
         }
     }
 }

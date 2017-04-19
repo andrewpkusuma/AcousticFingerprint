@@ -60,7 +60,9 @@ public class AudioAnalysis {
                 double mag = spectrum[i][freq].abs();
 
                 //Find out which range we are in:
-                int index = getIndex(freq);
+                int index = 0;
+                while (RANGE[index] < freq)
+                    index++;
 
                 //Save the highest magnitude and corresponding frequency:
                 if (mag > highscores[i][index]) {
@@ -69,7 +71,8 @@ public class AudioAnalysis {
                 }
             }
         }
-        //Filtering using sliding windows, somewhat works for now
+
+        //Filtering using sliding windows
         /*
         int index = 0, restCount = 0;
         while ((index + 1) * FILTER_WINDOW_SIZE <= peak.length) {
@@ -104,27 +107,15 @@ public class AudioAnalysis {
                 totalMag += spectrum[i][(int) peak[i][j]].abs();
         meanMag = totalMag / (peak.length * peak[0].length);
         for (int i = 0; i < peak.length; i++)
-            for (int j = 0; j < peak[i].length; j++)
-                if (spectrum[i][(int) peak[i][j]].abs() >= meanMag) {
+            for (int j = 0; j < peak[i].length; j++) {
+                double amp = spectrum[i][(int) peak[i][j]].abs();
+                if (amp >= 275000 && amp >= meanMag) {
                     int[] temp = {i, (int) peak[i][j]};
                     peakFiltered.add(temp);
                 }
-        /*
-        //Write the points to a file:
-        for (int i = 0; i < AMOUNT_OF_POINTS; i++) {
-            fw.append(recordPoints[i] + "\t");
-        }
-        fw.append("\n");
-        */
+            }
 
         return peakFiltered;
-    }
-
-    public static int getIndex(int freq) {
-        //Find out in which range
-        int i = 0;
-        while (RANGE[i] < freq) i++;
-        return i;
     }
 
     public static Complex[] hammingWindow(Complex[] recordedData) {
