@@ -41,7 +41,7 @@ public class AudioAnalysis {
             }
             Complex[] complex = hammingWindow(complexTemp);
             // Perform FFT analysis on the chunk:
-            FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.STANDARD);
+            FastFourierTransformer fft = new FastFourierTransformer(DftNormalization.UNITARY);
             results[times] = fft.transform(complex, TransformType.FORWARD);
         }
         return results;
@@ -109,7 +109,7 @@ public class AudioAnalysis {
         for (int i = 0; i < peak.length; i++)
             for (int j = 0; j < peak[i].length; j++) {
                 double amp = spectrum[i][(int) peak[i][j]].abs();
-                if (amp >= 275000 && amp >= meanMag) {
+                if (amp >= CHUNK_SIZE && amp >= meanMag) {
                     int[] temp = {i, (int) peak[i][j]};
                     peakFiltered.add(temp);
                 }

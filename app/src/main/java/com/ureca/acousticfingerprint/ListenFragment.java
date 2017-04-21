@@ -81,7 +81,7 @@ public class ListenFragment extends Fragment {
     }
 
     private void stopRecording() {
-        if (recorder != null) {
+        if (recorder != null && runnable != null) {
             recordTask.cancel();
             runnable.stop();
             runnable = null;
