@@ -3,23 +3,27 @@ package com.ureca.acousticfingerprint;
 import android.Manifest;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.database.Cursor;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
-import android.util.SparseIntArray;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -33,6 +37,7 @@ public class ListenFragment extends Fragment {
     private static final int RECORDER_SAMPLERATE = 44100;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
+    public static String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
     private static int BUFFER_SIZE = AudioRecord.getMinBufferSize(
             RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
     SharedPreferences sharedpreferences;
@@ -44,8 +49,6 @@ public class ListenFragment extends Fragment {
     private Thread recordingThread = null;
     private boolean isRecording = false;
     private int recordInterval;
-    private String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
-    private int[] match;
     private TimerTask recordTask;
     private RecordRunnable runnable;
     private DBHelper dbHelper;
@@ -56,7 +59,7 @@ public class ListenFragment extends Fragment {
 
     private void onRecord(boolean isRecording) {
         if (!isRecording) {
-            match = new int[files.length];
+            AudioMatching.reset();
             startRecording();
             mRecordButton.setImageResource(R.drawable.ic_stop_white_36px);
             mRecordButton.setSoundEffectsEnabled(true);
@@ -149,7 +152,8 @@ public class ListenFragment extends Fragment {
             // to turn bytes to shorts as either big endian or little endian.
             ByteBuffer.wrap(imgDataBa).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
 
-            ArrayList<Fingerprint> fingerprints = AudioAnalysis.fingerprint(shorts);
+            ArrayList<int[]> peaks = AudioAnalysis.analyze(shorts);
+            ArrayList<Fingerprint> fingerprints = AudioHashing.hash(peaks);
 
             for (Fingerprint f : fingerprints)
                 dbHelper.insertFingerprint(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta(), f.getAbsoluteTime(), i);
@@ -170,70 +174,14 @@ public class ListenFragment extends Fragment {
         public void run() {
             if (recorder != null) {
                 stopRecording();
-                ArrayList<Fingerprint> fingerprints = AudioAnalysis.fingerprint(audio);
+                ArrayList<int[]> peaks = AudioAnalysis.analyze(audio);
+                ArrayList<Fingerprint> fingerprints = AudioHashing.hash(peaks);
                 audio = new short[RECORDER_SAMPLERATE * recordInterval];
                 startRecording();
-                dbHelper = new DBHelper(getContext());
-                HashMap<ArrayList<Integer>, ArrayList<Integer>> targetZoneMap = new HashMap<>();
-                SparseIntArray[] timeCoherencyMap = new SparseIntArray[files.length];
-                for (int i = 0; i < files.length; i++)
-                    timeCoherencyMap[i] = new SparseIntArray();
-                for (Fingerprint f : fingerprints) {
-                    Cursor couples = dbHelper.getData(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta());
-                    if (couples.moveToFirst()) {
-                        do {
-                            Integer id = couples.getInt(couples.getColumnIndex("song_id"));
-                            Integer absoluteTime = couples.getInt(couples.getColumnIndex("absolute_time"));
-                            Integer delta = f.getAbsoluteTime() - absoluteTime;
-                            ArrayList<Integer> couple = new ArrayList<>();
-                            couple.add(id);
-                            couple.add(absoluteTime);
-                            ArrayList<Integer> a;
-                            if ((a = targetZoneMap.get(couple)) != null) {
-                                a.add(delta);
-                                targetZoneMap.put(couple, a);
-                            } else {
-                                a = new ArrayList<>();
-                                a.add(delta);
-                                targetZoneMap.put(couple, a);
-                            }
-                        } while (couples.moveToNext());
-                    }
-                    couples.close();
-                    dbHelper.close();
-                }
-                for (ArrayList<Integer> i : targetZoneMap.keySet()) {
-                    ArrayList<Integer> a = targetZoneMap.get(i);
-                    if (a.size() >= 3)
-                        for (Integer delta : a) {
-                            Integer count = timeCoherencyMap[i.get(0)].get(delta);
-                            timeCoherencyMap[i.get(0)].put(delta, count == 0 ? 1 : count + 1);
-                        }
-                }
-                // Currently assume most common delta is the correct delta
-                for (int i = 0; i < match.length; i++) {
-                    SparseIntArray s = timeCoherencyMap[i];
-                    int currentMaxDeltaCount = 0;
-                    for (int j = 0; j < s.size(); j++) {
-                        Integer delta = s.keyAt(j);
-                        if (s.get(delta) >= currentMaxDeltaCount) {
-                            currentMaxDeltaCount = s.get(delta);
-                        }
-                    }
-                    match[i] += currentMaxDeltaCount;
-                }
-
-                int maxTemp = 0, maximum = -1;
-                for (int i = 0; i < match.length; i++) {
-                    if (match[i] > maxTemp) {
-                        maximum = i;
-                        maxTemp = match[i];
-                    }
-                }
-
-                if (maximum > 0 && isRecording) {
-                    final String MATCHING_AD = files[maximum];
-                    final int COUNT = match[maximum];
+                int[] match = AudioMatching.match(fingerprints, new DBHelper(getContext()));
+                if (match != null && isRecording) {
+                    final String MATCHING_AD = files[match[0]];
+                    final int COUNT = match[1];
                     text.post(new Runnable() {
                         public void run() {
                             text.setText("Match: " + MATCHING_AD + " " + COUNT);
