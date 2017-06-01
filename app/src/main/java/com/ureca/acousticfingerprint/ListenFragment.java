@@ -1,13 +1,14 @@
 package com.ureca.acousticfingerprint;
 
 import android.Manifest;
+import android.content.Context;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.database.Cursor;
 import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -17,12 +18,6 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.TextView;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.Timer;
 import java.util.TimerTask;
@@ -50,8 +45,10 @@ public class ListenFragment extends Fragment {
     private boolean isRecording = false;
     private int recordInterval;
     private TimerTask recordTask;
-    private RecordRunnable runnable;
+    private RecordRunnable recordRunnable;
+    private DisplayAndStoreAdRunnable displayAndStoreAdRunnable;
     private DBHelper dbHelper;
+    private MyInterface listener;
 
     public static ListenFragment newInstance() {
         return new ListenFragment();
@@ -75,8 +72,8 @@ public class ListenFragment extends Fragment {
     private void startRecording() {
         recorder.startRecording();
         isRecording = true;
-        runnable = new RecordRunnable();
-        recordingThread = new Thread(runnable, "AudioRecorder Thread");
+        recordRunnable = new RecordRunnable();
+        recordingThread = new Thread(recordRunnable, "AudioRecorder Thread");
         recordingThread.start();
         recordTask = new RecordTask();
         timer = new Timer();
@@ -84,10 +81,10 @@ public class ListenFragment extends Fragment {
     }
 
     private void stopRecording() {
-        if (recorder != null && runnable != null) {
+        if (recorder != null && recordRunnable != null) {
             recordTask.cancel();
-            runnable.stop();
-            runnable = null;
+            recordRunnable.stop();
+            recordRunnable = null;
             recordingThread = null;
             recorder.stop();
             isRecording = false;
@@ -135,6 +132,149 @@ public class ListenFragment extends Fragment {
         /*
         dbHelper = new DBHelper(getContext());
         dbHelper.refreshDatabase();
+
+        dbHelper.insertAd("Holcim", "Contact Details\n" +
+                "\n" +
+                "Address    -  Hagenholzstrasse 85\n" +
+                "              CH - 8050 Zurich\n" +
+                "              Switzerland.\n" +
+                "\n" +
+                "Phone      -  +41 58 858 5858\n" +
+                "Fax        -  +41 58 858 5859", "http://www.holcim.com", R.drawable.test, 0);
+        dbHelper.insertAd("Hutch", "Contact Details\n" +
+                "\n" +
+                "Address             -  Hutchison Telecommunications\n" +
+                "\t\t       Lanka (Pvt) Ltd,\n" +
+                "                       234, Galle Road, Colombo 04, \n" +
+                "                       Sri Lanka.\n" +
+                "\n" +
+                "Telephone Number    -  1788\n" +
+                "Send SMS            -  5555 \n" +
+                "Email               -  cs@hutchison.lk", "https://www.hutch.lk", R.drawable.test, 1);
+        dbHelper.insertAd("Hutch", "Contact Details\n" +
+                "\n" +
+                "Address             -  Hutchison Telecommunications\n" +
+                "\t\t       Lanka (Pvt) Ltd,\n" +
+                "                       234, Galle Road, Colombo 04, \n" +
+                "                       Sri Lanka.\n" +
+                "\n" +
+                "Telephone Number    -  1788\n" +
+                "Send SMS            -  5555 \n" +
+                "Email               -  cs@hutchison.lk", "https://www.hutch.lk", R.drawable.test, 2);
+        dbHelper.insertAd("Janet", "Contact Details\n" +
+                "\n" +
+                "Address -   The Janet Group.\n" +
+                "            Level #1\n" +
+                "            No 269, Galle Road,\n" +
+                "            Mount Lavinia.\n" +
+                "\n" +
+                "Sri Lanka Tel - +94 114 200022\n" +
+                "Fax           - +94 114 200024\n" +
+                "E-mail        - info@janet-ayurveda.com\n" +
+                "\n" +
+                "Janet Salons\n" +
+                "\n" +
+                "1. No. 3, Castle Avenue, Colombo 8.\n" +
+                "2. No. 15, Sinsapa Road, Colombo 6.\n" +
+                "3. Keells Super Building, No. 126 B , Highlevel Road, Nugegoda.", "http://janet-ayurveda.com/", R.drawable.test, 3);
+        dbHelper.insertAd("Janet", "Contact Details\n" +
+                "\n" +
+                "Address -   The Janet Group.\n" +
+                "            Level #1\n" +
+                "            No 269, Galle Road,\n" +
+                "            Mount Lavinia.\n" +
+                "\n" +
+                "Sri Lanka Tel - +94 114 200022\n" +
+                "Fax           - +94 114 200024\n" +
+                "E-mail        - info@janet-ayurveda.com\n" +
+                "\n" +
+                "Janet Salons\n" +
+                "\n" +
+                "1. No. 3, Castle Avenue, Colombo 8.\n" +
+                "2. No. 15, Sinsapa Road, Colombo 6.\n" +
+                "3. Keells Super Building, No. 126 B , Highlevel Road, Nugegoda.", "http://janet-ayurveda.com/", R.drawable.test, 4);
+        dbHelper.insertAd("Keells Super", "Contact Details \n" +
+                "\n" +
+                "\"John Keells Holdings PLC\"\n" +
+                "\n" +
+                "Jaykay Marketing Services Pvt Ltd.\n" +
+                "No:148, Vauxhall Street,\n" +
+                "Colombo 2, Sri Lanka.\n" +
+                "\n" +
+                "Telephone No.     - +94 11 2303500 \n" +
+                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
+                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
+                "\n" +
+                "\n" +
+                "Email\n" +
+                "Delivery Operations      - ksoperations.jms@keells.com\n" +
+                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 5);
+        dbHelper.insertAd("Keells Super", "Contact Details \n" +
+                "\n" +
+                "\"John Keells Holdings PLC\"\n" +
+                "\n" +
+                "Jaykay Marketing Services Pvt Ltd.\n" +
+                "No:148, Vauxhall Street,\n" +
+                "Colombo 2, Sri Lanka.\n" +
+                "\n" +
+                "Telephone No.     - +94 11 2303500 \n" +
+                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
+                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
+                "\n" +
+                "\n" +
+                "Email\n" +
+                "Delivery Operations      - ksoperations.jms@keells.com\n" +
+                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 6);
+        dbHelper.insertAd("Keells Super", "Contact Details \n" +
+                "\n" +
+                "\"John Keells Holdings PLC\"\n" +
+                "\n" +
+                "Jaykay Marketing Services Pvt Ltd.\n" +
+                "No:148, Vauxhall Street,\n" +
+                "Colombo 2, Sri Lanka.\n" +
+                "\n" +
+                "Telephone No.     - +94 11 2303500 \n" +
+                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
+                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
+                "\n" +
+                "\n" +
+                "Email\n" +
+                "Delivery Operations      - ksoperations.jms@keells.com\n" +
+                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 7);
+        dbHelper.insertAd("Keells Super", "Contact Details \n" +
+                "\n" +
+                "\"John Keells Holdings PLC\"\n" +
+                "\n" +
+                "Jaykay Marketing Services Pvt Ltd.\n" +
+                "No:148, Vauxhall Street,\n" +
+                "Colombo 2, Sri Lanka.\n" +
+                "\n" +
+                "Telephone No.     - +94 11 2303500 \n" +
+                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
+                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
+                "\n" +
+                "\n" +
+                "Email\n" +
+                "Delivery Operations      - ksoperations.jms@keells.com\n" +
+                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 8);
+        dbHelper.insertAd("Keells Super", "Contact Details \n" +
+                "\n" +
+                "\"John Keells Holdings PLC\"\n" +
+                "\n" +
+                "Jaykay Marketing Services Pvt Ltd.\n" +
+                "No:148, Vauxhall Street,\n" +
+                "Colombo 2, Sri Lanka.\n" +
+                "\n" +
+                "Telephone No.     - +94 11 2303500 \n" +
+                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
+                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
+                "\n" +
+                "\n" +
+                "Email\n" +
+                "Delivery Operations      - ksoperations.jms@keells.com\n" +
+                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 9);
+
+
         for (int i = 0; i < files.length; i++) {
             String fileNames = files[i];
             File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + fileNames);
@@ -170,6 +310,24 @@ public class ListenFragment extends Fragment {
         }
     }
 
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof MyInterface) {
+            listener = (MyInterface) context;
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        listener = null;
+        super.onDetach();
+    }
+
+    public interface MyInterface {
+        void storeAd(Advertisement advertisement);
+    }
+
     private class RecordTask extends TimerTask {
         public void run() {
             if (recorder != null) {
@@ -180,13 +338,11 @@ public class ListenFragment extends Fragment {
                 startRecording();
                 int[] match = AudioMatching.match(fingerprints, new DBHelper(getContext()));
                 if (match != null && isRecording) {
-                    final String MATCHING_AD = files[match[0]];
-                    final int COUNT = match[1];
-                    text.post(new Runnable() {
-                        public void run() {
-                            text.setText("Match: " + MATCHING_AD + " " + COUNT);
-                        }
-                    });
+                    if (match[1] > 10) {
+                        displayAndStoreAdRunnable = new DisplayAndStoreAdRunnable();
+                        displayAndStoreAdRunnable.setMatch(match[0]);
+                        displayAndStoreAdRunnable.run();
+                    }
                 }
             }
         }
@@ -211,6 +367,41 @@ public class ListenFragment extends Fragment {
 
         void stop() {
             isStopped = true;
+        }
+    }
+
+    private class DisplayAndStoreAdRunnable implements Runnable {
+        int match = -1;
+        String name;
+        String details;
+        String link;
+        int imageID;
+
+        @Override
+        public void run() {
+            DBHelper dbHelper = new DBHelper(getContext());
+            Cursor adDetails = dbHelper.getAdDetails(match);
+            if (adDetails.moveToFirst()) {
+                name = adDetails.getString(adDetails.getColumnIndex("name"));
+                details = adDetails.getString(adDetails.getColumnIndex("details"));
+                link = adDetails.getString(adDetails.getColumnIndex("link"));
+                imageID = adDetails.getInt(adDetails.getColumnIndex("image_id"));
+            }
+            adDetails.close();
+            listener.storeAd(new Advertisement(name, details, link, imageID, match));
+            getActivity().runOnUiThread(new Runnable() {
+                @Override
+                public void run() {
+                    onRecord(true);
+                    text.setText("Name: " + name + "\n"
+                            + "Details:\n" + details + "\n"
+                            + "Link: " + link);
+                }
+            });
+        }
+
+        public void setMatch(int match) {
+            this.match = match;
         }
     }
 }

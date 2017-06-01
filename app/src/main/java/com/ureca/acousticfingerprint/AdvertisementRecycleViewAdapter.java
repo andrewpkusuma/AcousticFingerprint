@@ -22,28 +22,6 @@ import java.util.List;
 
 public class AdvertisementRecycleViewAdapter extends RecyclerView.Adapter<AdvertisementRecycleViewAdapter.AdvertisementViewHolder> {
 
-    public static class AdvertisementViewHolder extends RecyclerView.ViewHolder {
-        CardView cv;
-        TextView adName;
-        TextView adDetails;
-        //TextView adSummary;
-        Button adLink;
-        ImageView adImage;
-        Button adRemove;
-
-        AdvertisementViewHolder(View itemView) {
-            super(itemView);
-            cv = (CardView) itemView.findViewById(R.id.cv);
-            adName = (TextView) itemView.findViewById(R.id.ad_name);
-            adDetails = (TextView) itemView.findViewById(R.id.ad_details);
-            //adSummary = (TextView)itemView.findViewById(R.id.ad_summary);
-            adLink = (Button) itemView.findViewById(R.id.ad_link);
-            adImage = (ImageView) itemView.findViewById(R.id.ad_image);
-            adRemove = (Button) itemView.findViewById(R.id.ad_remove);
-
-        }
-    }
-
     List<Advertisement> ads;
     Context context;
 
@@ -63,8 +41,6 @@ public class AdvertisementRecycleViewAdapter extends RecyclerView.Adapter<Advert
         AdvertisementViewHolder avh = new AdvertisementViewHolder(v);
         return avh;
     }
-
-    //int mExpandedPosition = -1;
 
     @Override
     public void onBindViewHolder(final AdvertisementViewHolder adViewHolder, int i) {
@@ -133,6 +109,8 @@ public class AdvertisementRecycleViewAdapter extends RecyclerView.Adapter<Advert
         });
     }
 
+    //int mExpandedPosition = -1;
+
     public void insert(int position, Advertisement ad) {
         ads.add(position, ad);
         notifyDataSetChanged();
@@ -150,9 +128,6 @@ public class AdvertisementRecycleViewAdapter extends RecyclerView.Adapter<Advert
         }
     }
 
-    public void collapseAll() {
-    }
-
     public List<Advertisement> getAds() {
         return ads;
     }
@@ -165,5 +140,27 @@ public class AdvertisementRecycleViewAdapter extends RecyclerView.Adapter<Advert
     @Override
     public int getItemCount() {
         return ads.size();
+    }
+
+    public static class AdvertisementViewHolder extends RecyclerView.ViewHolder {
+        CardView cv;
+        TextView adName;
+        TextView adDetails;
+        //TextView adSummary;
+        Button adLink;
+        ImageView adImage;
+        Button adRemove;
+
+        AdvertisementViewHolder(View itemView) {
+            super(itemView);
+            cv = (CardView) itemView.findViewById(R.id.cv);
+            adName = (TextView) itemView.findViewById(R.id.ad_name);
+            adDetails = (TextView) itemView.findViewById(R.id.ad_details);
+            //adSummary = (TextView)itemView.findViewById(R.id.ad_summary);
+            adLink = (Button) itemView.findViewById(R.id.ad_link);
+            adImage = (ImageView) itemView.findViewById(R.id.ad_image);
+            adRemove = (Button) itemView.findViewById(R.id.ad_remove);
+
+        }
     }
 }

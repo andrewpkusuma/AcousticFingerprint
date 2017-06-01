@@ -11,6 +11,9 @@ import android.support.v4.app.FragmentPagerAdapter;
 
 public class SampleFragmentPagerAdapter extends FragmentPagerAdapter {
     final int PAGE_COUNT = 3;
+    ListenFragment listenFragment = ListenFragment.newInstance();
+    HistoryFragment historyFragment = HistoryFragment.newInstance();
+    SettingsFragment settingsFragment = SettingsFragment.newInstance();
     private String tabTitles[] = new String[] { "Listen", "History", "Settings" };
     private Context context;
 
@@ -28,11 +31,11 @@ public class SampleFragmentPagerAdapter extends FragmentPagerAdapter {
     public Fragment getItem(int position) {
         switch (position) {
             case 0:
-                return ListenFragment.newInstance();
+                return listenFragment;
             case 1:
-                return HistoryFragment.newInstance();
+                return historyFragment;
             case 2:
-                return SettingsFragment.newInstance();
+                return settingsFragment;
             default:
                 return PageFragment.newInstance();
         }

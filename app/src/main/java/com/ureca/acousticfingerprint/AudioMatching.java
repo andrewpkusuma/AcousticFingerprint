@@ -1,6 +1,5 @@
 package com.ureca.acousticfingerprint;
 
-import android.content.Context;
 import android.database.Cursor;
 import android.util.SparseIntArray;
 
@@ -23,10 +22,10 @@ public class AudioMatching {
         for (int i = 0; i < files.length; i++)
             timeCoherencyMap[i] = new SparseIntArray();
         for (Fingerprint f : fingerprints) {
-            Cursor couples = dbHelper.getData(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta());
+            Cursor couples = dbHelper.getFingerprintCouples(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta());
             if (couples.moveToFirst()) {
                 do {
-                    Integer id = couples.getInt(couples.getColumnIndex("song_id"));
+                    Integer id = couples.getInt(couples.getColumnIndex("ad_id"));
                     Integer absoluteTime = couples.getInt(couples.getColumnIndex("absolute_time"));
                     Integer delta = f.getAbsoluteTime() - absoluteTime;
                     ArrayList<Integer> couple = new ArrayList<>();

@@ -23,8 +23,6 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import static android.content.ContentValues.TAG;
-
 /**
  * Created by Andrew on 10/19/16.
  */
@@ -52,6 +50,17 @@ public class HistoryFragment extends Fragment {
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        sharedpreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
+        jsonAds = sharedpreferences.getString("adList", "");
+        if (!jsonAds.isEmpty()) {
+            Type type = new TypeToken<List<Advertisement>>() {
+            }.getType();
+            ArrayList<Advertisement> newlist = gson.fromJson(jsonAds, type);
+            ads.addAll(newlist);
+        }
+
+        adapter = new AdvertisementRecycleViewAdapter(ads, getActivity().getApplication());
+        adapter.setHasStableIds(true);
     }
 
     @Override
@@ -67,27 +76,16 @@ public class HistoryFragment extends Fragment {
         rv.setLayoutManager(llm);
         rv.setHasFixedSize(true);
 
-        sharedpreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        jsonAds = sharedpreferences.getString("adList", "");
-        if (!jsonAds.isEmpty()) {
-            Type type = new TypeToken<List<Advertisement>>() {
-            }.getType();
-            ArrayList<Advertisement> newlist = gson.fromJson(jsonAds, type);
-            ads.addAll(newlist);
-        }
-
-        adapter = new AdvertisementRecycleViewAdapter(ads, getActivity().getApplication());
-        adapter.setHasStableIds(true);
-        rv.setAdapter(adapter);
-
+        /*
         addAd = (FloatingActionButton) view.findViewById(R.id.add_ad);
         addAd.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 rv.getLayoutManager().scrollToPosition(0);
-                adapter.insert(0, new Advertisement("Lorem Ipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer luctus tellus vitae sapien tristique, a egestas odio vehicula. Donec at tincidunt tortor. Cras sed lacinia tortor. Vivamus porta egestas ante. Cras dignissim, enim vitae dictum ultricies, lacus nisl dapibus ligula, a sodales dolor dolor in neque. Fusce feugiat at erat non condimentum. Curabitur a aliquam lectus, eu facilisis ex.", "http://www.google.com", R.drawable.test));
+                adapter.insert(0, new Advertisement("Lorem Ipsum", "Lorem ipsum dolor sit amet, consectetur adipiscing elit. Integer luctus tellus vitae sapien tristique, a egestas odio vehicula. Donec at tincidunt tortor. Cras sed lacinia tortor. Vivamus porta egestas ante. Cras dignissim, enim vitae dictum ultricies, lacus nisl dapibus ligula, a sodales dolor dolor in neque. Fusce feugiat at erat non condimentum. Curabitur a aliquam lectus, eu facilisis ex.", "http://www.google.com", R.drawable.test, -1));
                 //removeAd.setVisibility(adapter.getAds().isEmpty()?View.GONE:View.VISIBLE);
             }
         });
+        */
 
         removeAd = (FloatingActionButton) view.findViewById(R.id.remove_ad);
         //removeAd.setVisibility(ads.isEmpty()?View.GONE:View.VISIBLE);
@@ -144,6 +142,7 @@ public class HistoryFragment extends Fragment {
     public void onStart() {
         super.onStart();
         isStarted = true;
+        rv.setAdapter(adapter);
 
         /*Call your Fragment functions that uses getActivity()
         if (isVisible && isStarted) {
@@ -172,10 +171,13 @@ public class HistoryFragment extends Fragment {
         prefsEditor.apply();
         //Log.d("TAG","jsonCars = " + jsonAds);
     }
-
     /*
     public void updateView() {
 
     }
     */
+
+    public void insertAd(Advertisement advertisement) {
+        adapter.insert(0, advertisement);
+    }
 }

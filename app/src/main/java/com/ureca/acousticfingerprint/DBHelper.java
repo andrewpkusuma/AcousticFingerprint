@@ -13,24 +13,20 @@ import android.database.sqlite.SQLiteOpenHelper;
 
 public class DBHelper extends SQLiteOpenHelper {
 
-    public static final String FINGERPRINTS_COLUMN_ANCHOR_FREQUENCY = "anchor_frequency";
-    public static final String FINGERPRINTS_COLUMN_POINT_FREQUENCY = "point_frequency";
-    public static final String FINGERPRINTS_DELTA = "delta";
-    public static final String FINGERPRINTS_ABSOLUTE_TIME = "absolute_time";
-    public static final String FINGERPRINTS_SONG_ID = "song_id";
-    private static final String DATABASE_NAME = "MyDBName.db";
-    private static final String FINGERPRINTS_TABLE_NAME = "fingerprints";
-
     public DBHelper(Context context) {
-        super(context, DATABASE_NAME, null, 1);
+        super(context, "MyDBName.db", null, 1);
     }
 
     @Override
     public void onCreate(SQLiteDatabase db) {
         // TODO Auto-generated method stub
         db.execSQL(
+                "create table if not exists ads " +
+                        "(name varchar(50), details varchar(65535), link varchar(100), image_id int, ad_id int, primary key (ad_id))"
+        );
+        db.execSQL(
                 "create table if not exists fingerprints " +
-                        "(anchor_frequency smallint, point_frequency smallint, delta smallint, absolute_time smallint, song_id int)"
+                        "(anchor_frequency smallint, point_frequency smallint, delta smallint, absolute_time smallint, ad_id int, foreign key (ad_id) references ads(ad_id))"
         );
     }
 
@@ -38,54 +34,59 @@ public class DBHelper extends SQLiteOpenHelper {
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
         // TODO Auto-generated method stub
         db.execSQL("DROP TABLE IF EXISTS fingerprints");
+        db.execSQL("DROP TABLE IF EXISTS ads");
         onCreate(db);
     }
 
     public void refreshDatabase() {
         SQLiteDatabase db = this.getWritableDatabase();
         db.execSQL("DROP TABLE IF EXISTS fingerprints");
+        db.execSQL("DROP TABLE IF EXISTS ads");
         onCreate(db);
     }
 
-    public boolean insertFingerprint(short anchorFrequency, short pointFrequency, byte delta, short absoluteTime, int songID) {
+    public boolean insertFingerprint(short anchorFrequency, short pointFrequency, byte delta, short absoluteTime, int adID) {
         SQLiteDatabase db = this.getWritableDatabase();
         ContentValues contentValues = new ContentValues();
         contentValues.put("anchor_frequency", anchorFrequency);
         contentValues.put("point_frequency", pointFrequency);
         contentValues.put("delta", delta);
         contentValues.put("absolute_time", absoluteTime);
-        contentValues.put("song_id", songID);
+        contentValues.put("ad_id", adID);
         db.insert("fingerprints", null, contentValues);
         return true;
     }
 
-    public Cursor getData(short anchorFrequency, short pointFrequency, byte delta) {
+    public boolean insertAd(String name, String details, String link, int imageID, int adID) {
+        SQLiteDatabase db = this.getWritableDatabase();
+        ContentValues contentValues = new ContentValues();
+        contentValues.put("name", name);
+        contentValues.put("details", details);
+        contentValues.put("link", link);
+        contentValues.put("image_id", imageID);
+        contentValues.put("ad_id", adID);
+        db.insert("ads", null, contentValues);
+        return true;
+    }
+
+    public Cursor getFingerprintCouples(short anchorFrequency, short pointFrequency, byte delta) {
         SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res = db.rawQuery("select absolute_time, song_id from fingerprints " +
+        Cursor res = db.rawQuery("select absolute_time, ad_id from fingerprints " +
                 "where anchor_frequency=" + anchorFrequency + " and point_frequency=" + pointFrequency + " and delta=" + delta, null);
         return res;
     }
 
-    public long numberOfRows() {
+    public Cursor getAdDetails(int adID) {
         SQLiteDatabase db = this.getReadableDatabase();
-        long numRows = DatabaseUtils.queryNumEntries(db, FINGERPRINTS_TABLE_NAME);
+        Cursor res = db.rawQuery("select name, details, link, image_id from ads " +
+                "where ad_id=" + adID, null);
+        return res;
+    }
+
+    public long getNumOfAds() {
+        SQLiteDatabase db = this.getReadableDatabase();
+        long numRows = DatabaseUtils.queryNumEntries(db, "ads");
         return numRows;
-    }
-
-    public int getNumOfSongs() {
-        SQLiteDatabase db = this.getReadableDatabase();
-        Cursor res = db.rawQuery("select count(distinct song_id) from fingerprints", null);
-        res.moveToFirst();
-        int numOfSongs = res.getInt(0);
-        res.close();
-        return numOfSongs;
-    }
-
-    public Integer deleteFingerprint(short anchorFrequency, short pointFrequency, byte delta) {
-        SQLiteDatabase db = this.getWritableDatabase();
-        return db.delete("fingerprints",
-                "anchor_frequency = ? and point_frequency = ? and delta = ? ",
-                new String[]{Short.toString(anchorFrequency), Short.toString(pointFrequency), Byte.toString(delta)});
     }
 
     /*

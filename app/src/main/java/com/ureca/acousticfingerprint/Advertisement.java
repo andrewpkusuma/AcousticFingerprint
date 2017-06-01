@@ -10,11 +10,14 @@ public class Advertisement {
     String details;
     String link;
     int imageID;
-    Advertisement(String name, /*String summary, */String details, String link, int imageID) {
+    int adID;
+
+    Advertisement(String name, /*String summary, */String details, String link, int imageID, int adID) {
         this.name = name;
         //this.summary = summary;
         this.details = details;
         this.link = link;
         this.imageID = imageID;
+        this.adID = adID;
     }
 }

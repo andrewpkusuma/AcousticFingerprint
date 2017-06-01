@@ -9,14 +9,14 @@ public class Fingerprint {
     private short pointFrequency;
     private byte delta;
     private short absoluteTime;
-    private int songID;
+    private int adID;
 
-    public Fingerprint(short anchorFrequency, short pointFrequency, byte delta, short absoluteTime, int songID) {
+    public Fingerprint(short anchorFrequency, short pointFrequency, byte delta, short absoluteTime, int adID) {
         this.anchorFrequency = anchorFrequency;
         this.pointFrequency = pointFrequency;
         this.delta = delta;
         this.absoluteTime = absoluteTime;
-        this.songID = songID;
+        this.adID = adID;
     }
 
     public short getAnchorFrequency() {
@@ -35,7 +35,7 @@ public class Fingerprint {
         return absoluteTime;
     }
 
-    public int getSongID() {
-        return songID;
+    public int getAdID() {
+        return adID;
     }
 }
