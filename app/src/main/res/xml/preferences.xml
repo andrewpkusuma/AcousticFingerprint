@@ -1,21 +1,20 @@
 <?xml version="1.0" encoding="utf-8"?>
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <EditTextPreference android:title="Your Name"
-        android:key="username"
-        android:defaultValue="Anonymous"
-        android:summary="Please provide your username"></EditTextPreference>
-
-    <CheckBoxPreference android:title="Increase Microphone Sensitivity"
-        android:defaultValue="false"
-        android:summary="May improve performance on low-volume sources, but increases susceptibility to noise"
-        android:key="incMicSensitivity" />
-
-    <ListPreference android:title="Recording Interval"
-        android:summary="Select the length of recording per interval"
-        android:key="recInterval"
+    <ListPreference
         android:defaultValue="2"
-        android:entries="@array/listArray"
-        android:entryValues="@array/listValues" />
+        android:entries="@array/recIntervalList"
+        android:entryValues="@array/recIntervalValues"
+        android:key="recInterval"
+        android:summary="Select the length of recording per interval"
+        android:title="Recording Interval" />
+
+    <ListPreference
+        android:defaultValue="10"
+        android:entries="@array/cycleLimitList"
+        android:entryValues="@array/cycleLimitValues"
+        android:key="cycleLimit"
+        android:summary="Select the maximum number of recording cycles"
+        android:title="Cycle Limit" />
 
 </PreferenceScreen>

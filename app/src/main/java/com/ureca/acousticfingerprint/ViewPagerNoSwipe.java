@@ -36,6 +36,16 @@ public class ViewPagerNoSwipe extends ViewPager {
         return false;
     }
 
+    @Override
+    public void setCurrentItem(int item, boolean smoothScroll) {
+        super.setCurrentItem(item, false);
+    }
+
+    @Override
+    public void setCurrentItem(int item) {
+        super.setCurrentItem(item, false);
+    }
+
     public void setPagingEnabled(boolean enabled) {
         this.enabled = enabled;
     }

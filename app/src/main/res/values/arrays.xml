@@ -1,14 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string-array name="listArray">
+    <string-array name="recIntervalList">
         <item>Short (1 second)</item>
         <item>Medium (2 seconds)</item>
         <item>Long (4 seconds)</item>
     </string-array>
-
-    <string-array name="listValues">
+    <string-array name="recIntervalValues">
         <item>1</item>
         <item>2</item>
         <item>4</item>
+    </string-array>
+
+    <string-array name="cycleLimitList">
+        <item>Short (5 cycles)</item>
+        <item>Medium (10 cycles)</item>
+        <item>Long (20 cycles)</item>
+    </string-array>
+    <string-array name="cycleLimitValues">
+        <item>5</item>
+        <item>10</item>
+        <item>20</item>
     </string-array>
 </resources>

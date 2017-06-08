@@ -6,8 +6,6 @@ import android.util.SparseIntArray;
 import java.util.ArrayList;
 import java.util.HashMap;
 
-import static com.ureca.acousticfingerprint.ListenFragment.files;
-
 /**
  * Created by Andrew on 26/5/17.
  */
@@ -18,8 +16,8 @@ public class AudioMatching {
 
     public static int[] match(ArrayList<Fingerprint> fingerprints, DBHelper dbHelper) {
         HashMap<ArrayList<Integer>, ArrayList<Integer>> targetZoneMap = new HashMap<>();
-        SparseIntArray[] timeCoherencyMap = new SparseIntArray[files.length];
-        for (int i = 0; i < files.length; i++)
+        SparseIntArray[] timeCoherencyMap = new SparseIntArray[(int) dbHelper.getNumOfAds()];
+        for (int i = 0; i < (int) dbHelper.getNumOfAds(); i++)
             timeCoherencyMap[i] = new SparseIntArray();
         for (Fingerprint f : fingerprints) {
             Cursor couples = dbHelper.getFingerprintCouples(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta());
@@ -82,8 +80,8 @@ public class AudioMatching {
         return result;
     }
 
-    public static void reset() {
-        match = new int[files.length];
+    public static void reset(DBHelper dbHelper) {
+        match = new int[(int) dbHelper.getNumOfAds()];
+        dbHelper.close();
     }
-
 }

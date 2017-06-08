@@ -32,22 +32,21 @@ public class ListenFragment extends Fragment {
     private static final int RECORDER_SAMPLERATE = 44100;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    public static String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
+    // public static String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
     private static int BUFFER_SIZE = AudioRecord.getMinBufferSize(
             RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
+    private static int recordInterval;
+    private static int cycleLimit;
     SharedPreferences sharedpreferences;
+    private int cycleCount;
     private short[] audio;
     private TextView text;
-    private Timer timer = null;
     private FloatingActionButton mRecordButton = null;
     private AudioRecord recorder = null;
     private Thread recordingThread = null;
     private boolean isRecording = false;
-    private int recordInterval;
     private TimerTask recordTask;
     private RecordRunnable recordRunnable;
-    private DisplayAndStoreAdRunnable displayAndStoreAdRunnable;
-    private DBHelper dbHelper;
     private MyInterface listener;
 
     public static ListenFragment newInstance() {
@@ -56,7 +55,8 @@ public class ListenFragment extends Fragment {
 
     private void onRecord(boolean isRecording) {
         if (!isRecording) {
-            AudioMatching.reset();
+            AudioMatching.reset(new DBHelper(getContext()));
+            cycleCount = 0;
             startRecording();
             mRecordButton.setImageResource(R.drawable.ic_stop_white_36px);
             mRecordButton.setSoundEffectsEnabled(true);
@@ -76,7 +76,7 @@ public class ListenFragment extends Fragment {
         recordingThread = new Thread(recordRunnable, "AudioRecorder Thread");
         recordingThread.start();
         recordTask = new RecordTask();
-        timer = new Timer();
+        Timer timer = new Timer();
         timer.schedule(recordTask, recordInterval * 1000);
     }
 
@@ -124,6 +124,7 @@ public class ListenFragment extends Fragment {
         super.onStart();
         sharedpreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         recordInterval = Integer.parseInt(sharedpreferences.getString("recInterval", "2"));
+        cycleLimit = Integer.parseInt(sharedpreferences.getString("cycleLimit", "10"));
         audio = new short[RECORDER_SAMPLERATE * recordInterval];
         recorder = new AudioRecord(MediaRecorder.AudioSource.MIC,
                 RECORDER_SAMPLERATE, RECORDER_CHANNELS,
@@ -339,11 +340,22 @@ public class ListenFragment extends Fragment {
                 int[] match = AudioMatching.match(fingerprints, new DBHelper(getContext()));
                 if (match != null && isRecording) {
                     if (match[1] > 10) {
-                        displayAndStoreAdRunnable = new DisplayAndStoreAdRunnable();
+                        DisplayAndStoreAdRunnable displayAndStoreAdRunnable = new DisplayAndStoreAdRunnable();
                         displayAndStoreAdRunnable.setMatch(match[0]);
                         displayAndStoreAdRunnable.run();
                     }
                 }
+                if (cycleCount > cycleLimit) {
+                    getActivity().runOnUiThread(new Runnable() {
+                        @Override
+                        public void run() {
+                            onRecord(true);
+                            text.setText("No match found!" + "\n\n" +
+                                    "Click on the button to start again");
+                        }
+                    });
+                }
+                cycleCount++;
             }
         }
     }
@@ -395,7 +407,8 @@ public class ListenFragment extends Fragment {
                     onRecord(true);
                     text.setText("Name: " + name + "\n"
                             + "Details:\n" + details + "\n"
-                            + "Link: " + link);
+                            + "Link: " + link + "\n\n"
+                            + "Click on the button to start again");
                 }
             });
         }
