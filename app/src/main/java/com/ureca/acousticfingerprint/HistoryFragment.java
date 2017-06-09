@@ -29,13 +29,10 @@ import java.util.List;
 public class HistoryFragment extends Fragment {
 
     SharedPreferences sharedpreferences;
-    FloatingActionButton addAd;
     FloatingActionButton removeAd;
     Editor prefsEditor;
     Gson gson = new Gson();
     AdvertisementRecycleViewAdapter adapter;
-    private Boolean isStarted = false;
-    private Boolean isVisible = false;
     private List<Advertisement> ads = new ArrayList<>();
     private String jsonAds;
     private RecyclerView rv;
@@ -64,7 +61,7 @@ public class HistoryFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.recyclerview_fragment, container, false);
+        View view = inflater.inflate(R.layout.fragment_history, container, false);
         rv = (RecyclerView) view.findViewById(R.id.rv);
         LinearLayoutManager llm = new LinearLayoutManager(getActivity()) {
             public boolean supportsPredictiveItemAnimations() {
@@ -139,7 +136,6 @@ public class HistoryFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        isStarted = true;
         rv.setAdapter(adapter);
 
         /*Call your Fragment functions that uses getActivity()

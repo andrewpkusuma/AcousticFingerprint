@@ -13,12 +13,17 @@ import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
+import android.support.v7.widget.LinearLayoutManager;
+import android.support.v7.widget.RecyclerView;
+import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Timer;
 import java.util.TimerTask;
 
@@ -41,6 +46,7 @@ public class ListenFragment extends Fragment {
     private int cycleCount;
     private short[] audio;
     private TextView text;
+    private LinearLayout placeholder;
     private FloatingActionButton mRecordButton = null;
     private AudioRecord recorder = null;
     private Thread recordingThread = null;
@@ -60,12 +66,16 @@ public class ListenFragment extends Fragment {
             startRecording();
             mRecordButton.setImageResource(R.drawable.ic_stop_white_36px);
             mRecordButton.setSoundEffectsEnabled(true);
+            placeholder.removeAllViews();
             text.setText("Click on the button to stop recording");
+            placeholder.addView(text);
         } else {
             stopRecording();
             mRecordButton.setImageResource(R.drawable.ic_hearing_white_36px);
             mRecordButton.setSoundEffectsEnabled(false);
+            placeholder.removeAllViews();
             text.setText("Click on the button to start recording");
+            placeholder.addView(text);
         }
     }
 
@@ -99,8 +109,15 @@ public class ListenFragment extends Fragment {
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_page, container, false);
-        text = (TextView) view.findViewById(R.id.text);
+        View view = inflater.inflate(R.layout.fragment_listen, container, false);
+
+        placeholder = (LinearLayout) view.findViewById(R.id.placeholder);
+        placeholder.setOrientation(LinearLayout.VERTICAL);
+        text = new TextView(getContext());
+        text.setGravity(Gravity.CENTER);
+        text.setText("Click on the button to start recording");
+        placeholder.addView(text);
+
         mRecordButton = (FloatingActionButton) view.findViewById(R.id.start_record);
         mRecordButton.setImageResource(R.drawable.ic_hearing_white_36px);
         mRecordButton.setSoundEffectsEnabled(false);
@@ -350,8 +367,10 @@ public class ListenFragment extends Fragment {
                         @Override
                         public void run() {
                             onRecord(true);
+                            placeholder.removeAllViews();
                             text.setText("No match found!" + "\n\n" +
                                     "Click on the button to start again");
+                            placeholder.addView(text);
                         }
                     });
                 }
@@ -392,7 +411,7 @@ public class ListenFragment extends Fragment {
         @Override
         public void run() {
             DBHelper dbHelper = new DBHelper(getContext());
-            Cursor adDetails = dbHelper.getAdDetails(match);
+            final Cursor adDetails = dbHelper.getAdDetails(match);
             if (adDetails.moveToFirst()) {
                 name = adDetails.getString(adDetails.getColumnIndex("name"));
                 details = adDetails.getString(adDetails.getColumnIndex("details"));
@@ -400,15 +419,29 @@ public class ListenFragment extends Fragment {
                 imageID = adDetails.getInt(adDetails.getColumnIndex("image_id"));
             }
             adDetails.close();
-            listener.storeAd(new Advertisement(name, details, link, imageID, match));
+            final Advertisement advertisement = new Advertisement(name, details, link, imageID, match);
+            listener.storeAd(advertisement);
             getActivity().runOnUiThread(new Runnable() {
                 @Override
                 public void run() {
                     onRecord(true);
-                    text.setText("Name: " + name + "\n"
-                            + "Details:\n" + details + "\n"
-                            + "Link: " + link + "\n\n"
-                            + "Click on the button to start again");
+                    placeholder.removeAllViews();
+                    TextView header = new TextView(getContext());
+                    header.setGravity(Gravity.CENTER);
+                    header.setText("Match found!");
+                    placeholder.addView(header);
+                    List<Advertisement> matchingAd = new ArrayList<>();
+                    matchingAd.add(advertisement);
+                    RecyclerView matchingAdDisplay = new RecyclerView(getContext());
+                    matchingAdDisplay.setLayoutManager(new LinearLayoutManager(getContext()));
+                    matchingAdDisplay.setHasFixedSize(true);
+                    AdvertisementRecycleViewAdapter matchingAdDisplayAdapter = new AdvertisementRecycleViewAdapter(matchingAd, getContext());
+                    matchingAdDisplay.setAdapter(matchingAdDisplayAdapter);
+                    placeholder.addView(matchingAdDisplay);
+                    TextView footer = new TextView(getContext());
+                    footer.setGravity(Gravity.CENTER);
+                    footer.setText("Click on the button to start recording");
+                    placeholder.addView(footer);
                 }
             });
         }

@@ -1,25 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
-<android.support.design.widget.CoordinatorLayout android:id="@+id/main_content"
-    xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.design.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:id="@+id/main_content"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="0dp"
-    xmlns:app="http://schemas.android.com/apk/res-auto">
+    android:padding="0dp">
 
-    <TextView xmlns:android="http://schemas.android.com/apk/res/android"
-        android:id="@+id/text"
+    <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+        android:id="@+id/placeholder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:gravity="center"
-        android:text="Click on the button to start recording"/>
+        android:orientation="horizontal" />
 
     <android.support.design.widget.FloatingActionButton
+        android:id="@+id/start_record"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_gravity="bottom|center"
         android:layout_margin="16dp"
-        app:fabSize="normal"
-        android:id="@+id/start_record"
-        />
+        app:fabSize="normal" />
 
 </android.support.design.widget.CoordinatorLayout>
