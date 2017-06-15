@@ -89,8 +89,8 @@ public class AudioAnalysis {
         for (int i = 0; i < peak.length; i++) {
             for (int j = 0; j < peak[i].length; j++) {
                 double amp = spectrum[i][(int) peak[i][j]].abs();
-                if (amp >= meanMag[(i - 1) / FILTER_WINDOW_SIZE] && amp >= CHUNK_SIZE * 0.8) {
-                    int[] temp = {i, (int) peak[i][j]};
+                if (amp >= meanMag[(i - 1) / FILTER_WINDOW_SIZE] && amp >= CHUNK_SIZE * 0.5) {
+                    int[] temp = {i, (int) peak[i][j], (int) amp};
                     peakFiltered.add(temp);
                 }
             }

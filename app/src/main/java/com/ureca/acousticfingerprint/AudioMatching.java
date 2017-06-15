@@ -41,11 +41,11 @@ public class AudioMatching {
                 } while (couples.moveToNext());
             }
             couples.close();
-            dbHelper.close();
         }
+        dbHelper.close();
         for (ArrayList<Integer> i : targetZoneMap.keySet()) {
             ArrayList<Integer> a = targetZoneMap.get(i);
-            if (a.size() >= 3)
+            if (a.size() >= 4)
                 for (Integer delta : a) {
                     Integer count = timeCoherencyMap[i.get(0)].get(delta);
                     timeCoherencyMap[i.get(0)].put(delta, count == 0 ? 1 : count + 1);

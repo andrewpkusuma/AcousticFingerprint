@@ -9,6 +9,7 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
+import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
@@ -22,6 +23,12 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -37,7 +44,6 @@ public class ListenFragment extends Fragment {
     private static final int RECORDER_SAMPLERATE = 44100;
     private static final int RECORDER_CHANNELS = AudioFormat.CHANNEL_IN_MONO;
     private static final int RECORDER_AUDIO_ENCODING = AudioFormat.ENCODING_PCM_16BIT;
-    // public static String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
     private static int BUFFER_SIZE = AudioRecord.getMinBufferSize(
             RECORDER_SAMPLERATE, RECORDER_CHANNELS, RECORDER_AUDIO_ENCODING);
     private static int recordInterval;
@@ -148,9 +154,8 @@ public class ListenFragment extends Fragment {
                 RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
         // Renew database upon AudioAnalysis parameters change
         /*
-        dbHelper = new DBHelper(getContext());
+        DBHelper dbHelper = new DBHelper(getContext());
         dbHelper.refreshDatabase();
-
         dbHelper.insertAd("Holcim", "Contact Details\n" +
                 "\n" +
                 "Address    -  Hagenholzstrasse 85\n" +
@@ -292,7 +297,7 @@ public class ListenFragment extends Fragment {
                 "Delivery Operations      - ksoperations.jms@keells.com\n" +
                 "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 9);
 
-
+        String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
         for (int i = 0; i < files.length; i++) {
             String fileNames = files[i];
             File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + fileNames);
@@ -317,6 +322,7 @@ public class ListenFragment extends Fragment {
                 dbHelper.insertFingerprint(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta(), f.getAbsoluteTime(), i);
 
         }
+        dbHelper.close();
         */
     }
 
@@ -419,6 +425,7 @@ public class ListenFragment extends Fragment {
                 imageID = adDetails.getInt(adDetails.getColumnIndex("image_id"));
             }
             adDetails.close();
+            dbHelper.close();
             final Advertisement advertisement = new Advertisement(name, details, link, imageID, match);
             listener.storeAd(advertisement);
             getActivity().runOnUiThread(new Runnable() {
