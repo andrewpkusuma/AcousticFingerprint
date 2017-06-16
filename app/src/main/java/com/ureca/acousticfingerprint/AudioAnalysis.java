@@ -46,27 +46,29 @@ public class AudioAnalysis {
     }
 
     public static ArrayList<int[]> findPeak(Complex[][] spectrum) {
-        double[][] peak = new double[spectrum.length][RANGE.length];
+        int[][] peak = new int[spectrum.length][RANGE.length];
         double[][] highscores = new double[spectrum.length][RANGE.length];
-        ArrayList<int[]> peakFiltered = new ArrayList<>();
+
+        int band = 0;
         //For every line of data:
         for (int i = 0; i < spectrum.length; i++) {
             for (int freq = 1; freq <= CHUNK_SIZE / 2; freq++) {
                 //Get the magnitude:
                 double mag = spectrum[i][freq].abs();
 
-                //Find out which range we are in:
-                int index = 0;
-                while (RANGE[index] < freq)
-                    index++;
+                //Update band if needed:
+                if (freq > RANGE[band])
+                    band++;
 
                 //Save the highest magnitude and corresponding frequency:
-                if (mag > highscores[i][index]) {
-                    highscores[i][index] = mag;
-                    peak[i][index] = freq;
+                if (mag > highscores[i][band]) {
+                    highscores[i][band] = mag;
+                    peak[i][band] = freq;
                 }
             }
         }
+
+        ArrayList<int[]> peakFiltered = new ArrayList<>();
 
         //Filtering using sliding windows
 
@@ -75,12 +77,12 @@ public class AudioAnalysis {
         while ((index + 1) * FILTER_WINDOW_SIZE <= peak.length) {
             for (int j = index * FILTER_WINDOW_SIZE; j < index * FILTER_WINDOW_SIZE + FILTER_WINDOW_SIZE; j++)
                 for (int k = 0; k < peak[j].length; k++)
-                    totalMag[index] += spectrum[j][(int) peak[j][k]].abs();
+                    totalMag[index] += spectrum[j][peak[j][k]].abs();
             index++;
         }
         for (int i = index * FILTER_WINDOW_SIZE; i < peak.length; i++)
             for (int j = 0; j < peak[i].length; j++) {
-                totalMag[index] += spectrum[i][(int) peak[i][j]].abs();
+                totalMag[index] += spectrum[i][peak[i][j]].abs();
                 restCount++;
             }
         for (int i = 0; i < meanMag.length - 1; i++)
@@ -88,14 +90,14 @@ public class AudioAnalysis {
         meanMag[meanMag.length - 1] = totalMag[totalMag.length - 1] / restCount;
         for (int i = 0; i < peak.length; i++) {
             for (int j = 0; j < peak[i].length; j++) {
-                double amp = spectrum[i][(int) peak[i][j]].abs();
-                if (amp >= meanMag[(i - 1) / FILTER_WINDOW_SIZE] && amp >= CHUNK_SIZE * 0.5) {
-                    int[] temp = {i, (int) peak[i][j], (int) amp};
+                int freq = peak[i][j];
+                double amp = spectrum[i][freq].abs();
+                if (peak[i][j] != 0 && amp >= meanMag[i / FILTER_WINDOW_SIZE]) {
+                    int[] temp = {i, freq, (int) amp};
                     peakFiltered.add(temp);
                 }
             }
         }
-
 
         //Filtering using mean of whole record
 

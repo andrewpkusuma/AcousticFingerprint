@@ -14,7 +14,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 public class DBHelper extends SQLiteOpenHelper {
 
     public DBHelper(Context context) {
-        super(context, "MyDBName.db", null, 1);
+        super(context, "FingerprintDatabase.db", null, 1);
     }
 
     @Override
