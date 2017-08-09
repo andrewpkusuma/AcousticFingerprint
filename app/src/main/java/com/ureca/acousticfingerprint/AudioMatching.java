@@ -1,5 +1,6 @@
 package com.ureca.acousticfingerprint;
 
+import android.content.Context;
 import android.database.Cursor;
 import android.util.SparseIntArray;
 
@@ -14,8 +15,9 @@ public class AudioMatching {
 
     private static int[] match;
 
-    public static int[] match(ArrayList<Fingerprint> fingerprints, DBHelper dbHelper) {
+    public static int[] match(ArrayList<Fingerprint> fingerprints, Context context) {
         HashMap<ArrayList<Integer>, ArrayList<Integer>> targetZoneMap = new HashMap<>();
+        DBHelper dbHelper = new DBHelper(context);
         SparseIntArray[] timeCoherencyMap = new SparseIntArray[(int) dbHelper.getNumOfAds()];
         for (int i = 0; i < (int) dbHelper.getNumOfAds(); i++)
             timeCoherencyMap[i] = new SparseIntArray();
@@ -48,7 +50,7 @@ public class AudioMatching {
             if (a.size() >= 4)
                 for (Integer delta : a) {
                     Integer count = timeCoherencyMap[i.get(0)].get(delta);
-                    timeCoherencyMap[i.get(0)].put(delta, count == 0 ? 1 : count + 1);
+                    timeCoherencyMap[i.get(0)].put(delta, count + 1);
                 }
         }
         // Currently assume most common delta is the correct delta

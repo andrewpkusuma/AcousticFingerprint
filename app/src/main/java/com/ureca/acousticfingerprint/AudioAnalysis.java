@@ -10,8 +10,8 @@ import java.util.ArrayList;
 public class AudioAnalysis {
 
     private static final int CHUNK_SIZE = 4096;
-    //Range : {320, 2560, 5120, 20000, 22050}
-    private static final int[] RANGE = new int[]{30, 238, 476, 1858, 2048};
+    //Range : {10-32, 32-64, 64-256, 256-512, 512-2048, 2048-8192, 8192-22050}
+    private static final int[] RANGE = new int[]{3, 6, 24, 48, 192, 768, 2048};
     private static final int FILTER_WINDOW_SIZE = 20;
 
     public static ArrayList<int[]> analyze(short[] audio) {
@@ -71,7 +71,7 @@ public class AudioAnalysis {
         ArrayList<int[]> peakFiltered = new ArrayList<>();
 
         //Filtering using sliding windows
-
+        /*
         double totalMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1], meanMag[] = new double[((peak.length - 1) / FILTER_WINDOW_SIZE) + 1];
         int index = 0, restCount = 0;
         while ((index + 1) * FILTER_WINDOW_SIZE <= peak.length) {
@@ -98,24 +98,25 @@ public class AudioAnalysis {
                 }
             }
         }
-
+        */
         //Filtering using mean of whole record
 
-        /*
-        double totalMag = 0, meanMag = 0;
+
+        double totalMag = 0, meanMag;
         for (int i = 0; i < peak.length; i++)
             for (int j = 0; j < peak[i].length; j++)
-                totalMag += spectrum[i][(int) peak[i][j]].abs();
+                totalMag += spectrum[i][peak[i][j]].abs();
         meanMag = totalMag / (peak.length * peak[0].length);
         for (int i = 0; i < peak.length; i++)
             for (int j = 0; j < peak[i].length; j++) {
-                double amp = spectrum[i][(int) peak[i][j]].abs();
-                if (amp >= CHUNK_SIZE && amp >= meanMag) {
-                    int[] temp = {i, (int) peak[i][j]};
+                int freq = peak[i][j];
+                double amp = spectrum[i][freq].abs();
+                if (freq != 0 && amp >= meanMag) {
+                    int[] temp = {i, freq, (int) amp};
                     peakFiltered.add(temp);
                 }
             }
-        */
+
 
         return peakFiltered;
     }

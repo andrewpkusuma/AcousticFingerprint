@@ -8,8 +8,8 @@ import java.util.ArrayList;
 
 public class AudioHashing {
 
-    private static final int ANCHOR_DISTANCE = 3;
-    private static final int TARGET_ZONE_SIZE = 5;
+    private static final int ANCHOR_DISTANCE = 6;
+    private static final int TARGET_ZONE_SIZE = 6;
 
     public static ArrayList<Fingerprint> hash(ArrayList<int[]> peak) {
 

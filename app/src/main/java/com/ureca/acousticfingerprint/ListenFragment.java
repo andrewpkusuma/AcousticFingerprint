@@ -9,13 +9,13 @@ import android.media.AudioFormat;
 import android.media.AudioRecord;
 import android.media.MediaRecorder;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.SparseIntArray;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -23,12 +23,20 @@ import android.view.ViewGroup;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
+import com.android.volley.Request;
+import com.android.volley.RequestQueue;
+import com.android.volley.Response;
+import com.android.volley.VolleyError;
+import com.android.volley.toolbox.JsonArrayRequest;
+import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.Volley;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Timer;
@@ -60,6 +68,7 @@ public class ListenFragment extends Fragment {
     private TimerTask recordTask;
     private RecordRunnable recordRunnable;
     private MyInterface listener;
+    private SparseIntArray match;
 
     public static ListenFragment newInstance() {
         return new ListenFragment();
@@ -69,6 +78,7 @@ public class ListenFragment extends Fragment {
         if (!isRecording) {
             AudioMatching.reset(new DBHelper(getContext()));
             cycleCount = 0;
+            match = new SparseIntArray();
             startRecording();
             mRecordButton.setImageResource(R.drawable.ic_stop_white_36px);
             mRecordButton.setSoundEffectsEnabled(true);
@@ -154,175 +164,7 @@ public class ListenFragment extends Fragment {
                 RECORDER_AUDIO_ENCODING, BUFFER_SIZE);
         // Renew database upon AudioAnalysis parameters change
         /*
-        DBHelper dbHelper = new DBHelper(getContext());
-        dbHelper.refreshDatabase();
-        dbHelper.insertAd("Holcim", "Contact Details\n" +
-                "\n" +
-                "Address    -  Hagenholzstrasse 85\n" +
-                "              CH - 8050 Zurich\n" +
-                "              Switzerland.\n" +
-                "\n" +
-                "Phone      -  +41 58 858 5858\n" +
-                "Fax        -  +41 58 858 5859", "http://www.holcim.com", R.drawable.test, 0);
-        dbHelper.insertAd("Hutch", "Contact Details\n" +
-                "\n" +
-                "Address             -  Hutchison Telecommunications\n" +
-                "\t\t       Lanka (Pvt) Ltd,\n" +
-                "                       234, Galle Road, Colombo 04, \n" +
-                "                       Sri Lanka.\n" +
-                "\n" +
-                "Telephone Number    -  1788\n" +
-                "Send SMS            -  5555 \n" +
-                "Email               -  cs@hutchison.lk", "https://www.hutch.lk", R.drawable.test, 1);
-        dbHelper.insertAd("Hutch", "Contact Details\n" +
-                "\n" +
-                "Address             -  Hutchison Telecommunications\n" +
-                "\t\t       Lanka (Pvt) Ltd,\n" +
-                "                       234, Galle Road, Colombo 04, \n" +
-                "                       Sri Lanka.\n" +
-                "\n" +
-                "Telephone Number    -  1788\n" +
-                "Send SMS            -  5555 \n" +
-                "Email               -  cs@hutchison.lk", "https://www.hutch.lk", R.drawable.test, 2);
-        dbHelper.insertAd("Janet", "Contact Details\n" +
-                "\n" +
-                "Address -   The Janet Group.\n" +
-                "            Level #1\n" +
-                "            No 269, Galle Road,\n" +
-                "            Mount Lavinia.\n" +
-                "\n" +
-                "Sri Lanka Tel - +94 114 200022\n" +
-                "Fax           - +94 114 200024\n" +
-                "E-mail        - info@janet-ayurveda.com\n" +
-                "\n" +
-                "Janet Salons\n" +
-                "\n" +
-                "1. No. 3, Castle Avenue, Colombo 8.\n" +
-                "2. No. 15, Sinsapa Road, Colombo 6.\n" +
-                "3. Keells Super Building, No. 126 B , Highlevel Road, Nugegoda.", "http://janet-ayurveda.com/", R.drawable.test, 3);
-        dbHelper.insertAd("Janet", "Contact Details\n" +
-                "\n" +
-                "Address -   The Janet Group.\n" +
-                "            Level #1\n" +
-                "            No 269, Galle Road,\n" +
-                "            Mount Lavinia.\n" +
-                "\n" +
-                "Sri Lanka Tel - +94 114 200022\n" +
-                "Fax           - +94 114 200024\n" +
-                "E-mail        - info@janet-ayurveda.com\n" +
-                "\n" +
-                "Janet Salons\n" +
-                "\n" +
-                "1. No. 3, Castle Avenue, Colombo 8.\n" +
-                "2. No. 15, Sinsapa Road, Colombo 6.\n" +
-                "3. Keells Super Building, No. 126 B , Highlevel Road, Nugegoda.", "http://janet-ayurveda.com/", R.drawable.test, 4);
-        dbHelper.insertAd("Keells Super", "Contact Details \n" +
-                "\n" +
-                "\"John Keells Holdings PLC\"\n" +
-                "\n" +
-                "Jaykay Marketing Services Pvt Ltd.\n" +
-                "No:148, Vauxhall Street,\n" +
-                "Colombo 2, Sri Lanka.\n" +
-                "\n" +
-                "Telephone No.     - +94 11 2303500 \n" +
-                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
-                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
-                "\n" +
-                "\n" +
-                "Email\n" +
-                "Delivery Operations      - ksoperations.jms@keells.com\n" +
-                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 5);
-        dbHelper.insertAd("Keells Super", "Contact Details \n" +
-                "\n" +
-                "\"John Keells Holdings PLC\"\n" +
-                "\n" +
-                "Jaykay Marketing Services Pvt Ltd.\n" +
-                "No:148, Vauxhall Street,\n" +
-                "Colombo 2, Sri Lanka.\n" +
-                "\n" +
-                "Telephone No.     - +94 11 2303500 \n" +
-                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
-                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
-                "\n" +
-                "\n" +
-                "Email\n" +
-                "Delivery Operations      - ksoperations.jms@keells.com\n" +
-                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 6);
-        dbHelper.insertAd("Keells Super", "Contact Details \n" +
-                "\n" +
-                "\"John Keells Holdings PLC\"\n" +
-                "\n" +
-                "Jaykay Marketing Services Pvt Ltd.\n" +
-                "No:148, Vauxhall Street,\n" +
-                "Colombo 2, Sri Lanka.\n" +
-                "\n" +
-                "Telephone No.     - +94 11 2303500 \n" +
-                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
-                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
-                "\n" +
-                "\n" +
-                "Email\n" +
-                "Delivery Operations      - ksoperations.jms@keells.com\n" +
-                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 7);
-        dbHelper.insertAd("Keells Super", "Contact Details \n" +
-                "\n" +
-                "\"John Keells Holdings PLC\"\n" +
-                "\n" +
-                "Jaykay Marketing Services Pvt Ltd.\n" +
-                "No:148, Vauxhall Street,\n" +
-                "Colombo 2, Sri Lanka.\n" +
-                "\n" +
-                "Telephone No.     - +94 11 2303500 \n" +
-                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
-                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
-                "\n" +
-                "\n" +
-                "Email\n" +
-                "Delivery Operations      - ksoperations.jms@keells.com\n" +
-                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 8);
-        dbHelper.insertAd("Keells Super", "Contact Details \n" +
-                "\n" +
-                "\"John Keells Holdings PLC\"\n" +
-                "\n" +
-                "Jaykay Marketing Services Pvt Ltd.\n" +
-                "No:148, Vauxhall Street,\n" +
-                "Colombo 2, Sri Lanka.\n" +
-                "\n" +
-                "Telephone No.     - +94 11 2303500 \n" +
-                "Text (SMS) 'Operations'  - +94 77 3762524 \n" +
-                "Text (SMS) 'Technical'   - +94 77 3647586 Fax: +94 11 2303555\n" +
-                "\n" +
-                "\n" +
-                "Email\n" +
-                "Delivery Operations      - ksoperations.jms@keells.com\n" +
-                "Technical                - web.jms@keells.com", "https://www.keellssuper.com", R.drawable.test, 9);
 
-        String[] files = {"holcim.wav", "hutch1.wav", "hutch2.wav", "janet1.wav", "janet2.wav", "keells1.wav", "keells2.wav", "keells3.wav", "keells4.wav", "keells5.wav"};
-        for (int i = 0; i < files.length; i++) {
-            String fileNames = files[i];
-            File file = new File(Environment.getExternalStorageDirectory().getAbsolutePath() + "/" + fileNames);
-            byte[] imgDataBa = new byte[(int) file.length()];
-
-            DataInputStream dataIs;
-            try {
-                dataIs = new DataInputStream(new FileInputStream(file));
-                dataIs.readFully(imgDataBa);
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-
-            short[] shorts = new short[imgDataBa.length / 2];
-            // to turn bytes to shorts as either big endian or little endian.
-            ByteBuffer.wrap(imgDataBa).order(ByteOrder.LITTLE_ENDIAN).asShortBuffer().get(shorts);
-
-            ArrayList<int[]> peaks = AudioAnalysis.analyze(shorts);
-            ArrayList<Fingerprint> fingerprints = AudioHashing.hash(peaks);
-
-            for (Fingerprint f : fingerprints)
-                dbHelper.insertFingerprint(f.getAnchorFrequency(), f.getPointFrequency(), f.getDelta(), f.getAbsoluteTime(), i);
-
-        }
-        dbHelper.close();
         */
     }
 
@@ -357,10 +199,98 @@ public class ListenFragment extends Fragment {
             if (recorder != null) {
                 stopRecording();
                 ArrayList<int[]> peaks = AudioAnalysis.analyze(audio);
-                ArrayList<Fingerprint> fingerprints = AudioHashing.hash(peaks);
                 audio = new short[RECORDER_SAMPLERATE * recordInterval];
                 startRecording();
-                int[] match = AudioMatching.match(fingerprints, new DBHelper(getContext()));
+                ArrayList<Fingerprint> fingerprints = AudioHashing.hash(peaks);
+
+                final RequestQueue queue = Volley.newRequestQueue(getContext());
+                final Gson gson = new Gson();
+
+                JSONArray fingerprintJsonArray = null;
+                try {
+                    fingerprintJsonArray = new JSONArray(gson.toJson(fingerprints));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+
+                JsonArrayRequest scoreRequest = new JsonArrayRequest(Request.Method.POST, "http://192.168.0.14/fingerprint_score.php", fingerprintJsonArray, new Response.Listener<JSONArray>() {
+                    @Override
+                    public void onResponse(JSONArray response) {
+                        Score[] update = gson.fromJson(response.toString(), new TypeToken<Score[]>() {
+                        }.getType());
+                        for (Score s : update)
+                            match.put(s.getAdID(), match.get(s.getAdID()) + s.getScore());
+
+                        int maxTemp = 0;
+                        int matchID = -1;
+
+                        for (int i = 0; i < match.size(); i++) {
+                            int currentKey = match.keyAt(i);
+                            int currentValue = match.get(currentKey);
+                            if (currentValue > maxTemp) {
+                                matchID = currentKey;
+                                maxTemp = currentValue;
+                            }
+                        }
+
+                        if (maxTemp >= 10 && matchID >= 0) {
+                            JSONObject jsonObject = null;
+                            try {
+                                jsonObject = new JSONObject().put("adID", matchID);
+                            } catch (JSONException e) {
+                                e.printStackTrace();
+                            }
+                            JsonObjectRequest adRequest = new JsonObjectRequest(Request.Method.POST, "http://192.168.0.14/ad_search.php", jsonObject, new Response.Listener<JSONObject>() {
+                                @Override
+                                public void onResponse(JSONObject response) {
+                                    final Advertisement advertisement = gson.fromJson(response.toString(), new TypeToken<Advertisement>() {
+                                    }.getType());
+                                    listener.storeAd(advertisement);
+                                    getActivity().runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            onRecord(true);
+                                            placeholder.removeAllViews();
+                                            TextView header = new TextView(getContext());
+                                            header.setGravity(Gravity.CENTER);
+                                            header.setText("Match found!");
+                                            placeholder.addView(header);
+                                            List<Advertisement> matchingAd = new ArrayList<>();
+                                            matchingAd.add(advertisement);
+                                            RecyclerView matchingAdDisplay = new RecyclerView(getContext());
+                                            matchingAdDisplay.setLayoutManager(new LinearLayoutManager(getContext()));
+                                            matchingAdDisplay.setHasFixedSize(true);
+                                            matchingAdDisplay.setNestedScrollingEnabled(false);
+                                            AdvertisementRecycleViewAdapter matchingAdDisplayAdapter = new AdvertisementRecycleViewAdapter(matchingAd, getContext());
+                                            matchingAdDisplay.setAdapter(matchingAdDisplayAdapter);
+                                            placeholder.addView(matchingAdDisplay);
+                                            TextView footer = new TextView(getContext());
+                                            footer.setGravity(Gravity.CENTER);
+                                            footer.setText("Click on the button to start recording");
+                                            placeholder.addView(footer);
+                                        }
+                                    });
+                                }
+                            }, new Response.ErrorListener() {
+                                @Override
+                                public void onErrorResponse(VolleyError error) {
+                                    //
+                                }
+                            });
+                            queue.add(adRequest);
+                        }
+
+                    }
+                }, new Response.ErrorListener() {
+                    @Override
+                    public void onErrorResponse(VolleyError error) {
+                        //
+                    }
+                });
+                queue.add(scoreRequest);
+
+                /*
+                int[] match = AudioMatching.match(fingerprints, getContext());
                 if (match != null && isRecording) {
                     if (match[1] > 10) {
                         DisplayAndStoreAdRunnable displayAndStoreAdRunnable = new DisplayAndStoreAdRunnable();
@@ -368,6 +298,8 @@ public class ListenFragment extends Fragment {
                         displayAndStoreAdRunnable.run();
                     }
                 }
+                */
+
                 if (cycleCount > cycleLimit) {
                     getActivity().runOnUiThread(new Runnable() {
                         @Override
@@ -390,9 +322,10 @@ public class ListenFragment extends Fragment {
 
         public void run() {
             if (!isStopped) {
-                short sData[] = new short[BUFFER_SIZE / 2];
+                short sData[];
                 int index = 0;
                 while (isRecording) {
+                    sData = new short[BUFFER_SIZE / 2];
                     recorder.read(sData, 0, BUFFER_SIZE / 2);
                     if (index + sData.length <= audio.length) {
                         System.arraycopy(sData, 0, audio, index, sData.length);
@@ -406,6 +339,7 @@ public class ListenFragment extends Fragment {
             isStopped = true;
         }
     }
+
 
     private class DisplayAndStoreAdRunnable implements Runnable {
         int match = -1;
@@ -442,6 +376,7 @@ public class ListenFragment extends Fragment {
                     RecyclerView matchingAdDisplay = new RecyclerView(getContext());
                     matchingAdDisplay.setLayoutManager(new LinearLayoutManager(getContext()));
                     matchingAdDisplay.setHasFixedSize(true);
+                    matchingAdDisplay.setNestedScrollingEnabled(false);
                     AdvertisementRecycleViewAdapter matchingAdDisplayAdapter = new AdvertisementRecycleViewAdapter(matchingAd, getContext());
                     matchingAdDisplay.setAdapter(matchingAdDisplayAdapter);
                     placeholder.addView(matchingAdDisplay);
@@ -457,4 +392,5 @@ public class ListenFragment extends Fragment {
             this.match = match;
         }
     }
+
 }
